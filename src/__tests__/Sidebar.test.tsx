@@ -1,7 +1,9 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
+import { BrandImageProvider } from '../auth/BrandImageContext'
 import Sidebar from '../components/Sidebar'
 
 function renderSidebar(roles: string[], initialEntries: string[] = ['/']) {
@@ -14,7 +16,9 @@ function renderSidebar(roles: string[], initialEntries: string[] = ['/']) {
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <AuthProvider>
-        <Sidebar />
+        <BrandImageProvider>
+          <Sidebar />
+        </BrandImageProvider>
       </AuthProvider>
     </MemoryRouter>,
   )
@@ -22,6 +26,42 @@ function renderSidebar(roles: string[], initialEntries: string[] = ['/']) {
 
 afterEach(() => {
   sessionStorage.clear()
+})
+
+describe('Sidebar — sign-out button', () => {
+  it('renders a "Sair" button when authenticated', () => {
+    renderSidebar(['GlobalAdmin'])
+    const sairButton = screen.getByRole('button', { name: /sair/i })
+    expect(sairButton).toBeInTheDocument()
+  })
+
+  it('renders as a <button> element, not a link', () => {
+    renderSidebar(['GlobalAdmin'])
+    const sairButton = screen.getByRole('button', { name: /sair/i })
+    expect(sairButton.tagName).toBe('BUTTON')
+    expect(sairButton).not.toHaveAttribute('href')
+  })
+
+  it('shows the LogOut icon', () => {
+    renderSidebar(['GlobalAdmin'])
+    // The button contains an SVG icon (LogOut from lucide-react)
+    const sairButton = screen.getByRole('button', { name: /sair/i })
+    const svg = sairButton.querySelector('svg')
+    expect(svg).toBeInTheDocument()
+  })
+
+  it('clears session storage on click', async () => {
+    const user = userEvent.setup()
+    renderSidebar(['GlobalAdmin'])
+
+    expect(sessionStorage.getItem('moto_admin_token')).toBe('fake-token')
+
+    const sairButton = screen.getByRole('button', { name: /sair/i })
+    await user.click(sairButton)
+
+    expect(sessionStorage.getItem('moto_admin_token')).toBeNull()
+    expect(sessionStorage.getItem('moto_admin_user')).toBeNull()
+  })
 })
 
 describe('Sidebar — GlobalAdmin role', () => {

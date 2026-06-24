@@ -1,6 +1,6 @@
-import { Building2, Car, ListStart, Route, Settings, Users } from 'lucide-react'
+import { Building2, Car, ListStart, LogOut, Route, Settings, Users } from 'lucide-react'
 import { ReactNode } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useBrandImage } from '../auth/BrandImageContext'
 
@@ -76,14 +76,20 @@ function SidebarSection({ label, children }: { label: string; children: ReactNod
 }
 
 export default function Sidebar() {
-  const { hasMinimumRole } = useAuth()
+  const { hasMinimumRole, signOut } = useAuth()
+  const navigate = useNavigate()
   const isGlobalAdmin = hasMinimumRole('GlobalAdmin')
+
+  function handleSignOut() {
+    signOut()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
       <SidebarBranding />
 
-      <nav className="flex flex-col gap-4">
+      <nav className="flex flex-1 flex-col gap-4">
         <SidebarNavLink to="/" end label="Dashboard" icon={HomeIcon} />
 
         {isGlobalAdmin && (
@@ -107,6 +113,17 @@ export default function Sidebar() {
         )}
         <SidebarNavLink to="/settings" label="Configurações" icon={Settings} />
       </nav>
+
+      <hr className="my-2 border-slate-200" />
+
+      <button
+        type="button"
+        onClick={handleSignOut}
+        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+      >
+        <LogOut className="h-5 w-5 shrink-0 text-slate-400" />
+        <span>Sair</span>
+      </button>
     </aside>
   )
 }
