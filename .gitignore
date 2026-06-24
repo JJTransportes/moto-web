@@ -28,3 +28,4 @@ chrome-user-data
 /.worktrees
 .claude/*.local.*
 .claude/worktrees
+.env
