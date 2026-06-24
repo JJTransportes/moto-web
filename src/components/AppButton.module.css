@@ -1,0 +1,25 @@
+.button {
+  background: linear-gradient(to left, #54abf2, #3a55bd);
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Roboto Flex', 'Roboto', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.24px;
+  line-height: 14px;
+  padding: 12px;
+  text-align: center;
+  width: 100%;
+  transition: opacity 0.15s;
+}
+
+.button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
