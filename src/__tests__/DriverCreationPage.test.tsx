@@ -56,7 +56,6 @@ function fillValidForm() {
   fireEvent.change(screen.getByLabelText('Endereço'), { target: { value: 'Av. Brasil, 456' } })
   fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'Jacareí' } })
   fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'SP' } })
-  fireEvent.change(screen.getByLabelText('Departamento'), { target: { value: 'Transporte' } })
   fireEvent.change(screen.getByLabelText('Selecione o veículo'), { target: { value: 'v-001' } })
   fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'joao@example.com' } })
   fireEvent.change(screen.getByLabelText('Senha inicial'), { target: { value: 'Senha@123' } })
@@ -75,6 +74,12 @@ describe('DriverCreationPage', () => {
     await waitFor(() => {
       expect(mockedFetchAvailableVehicles).toHaveBeenCalledWith('valid-token')
     })
+  })
+
+  it('does not render a department field', () => {
+    mockedFetchAvailableVehicles.mockResolvedValueOnce({ ok: true, data: mockVehicles })
+    renderPage()
+    expect(screen.queryByLabelText('Departamento')).not.toBeInTheDocument()
   })
 
   it('does not render a public partition selector', () => {

@@ -96,7 +96,6 @@ export default function DriverCreationPage() {
     e.address = validateRequired(form.address, 'Endereço')
     e.city = validateRequired(form.city, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
-    e.department = validateRequired(form.department, 'Departamento')
     e.vehicleId = validateRequired(form.vehicleId, 'Veículo')
     e.email = validateEmail(form.email)
     e.initialPassword = validatePassword(form.initialPassword)
@@ -127,7 +126,7 @@ export default function DriverCreationPage() {
         state: form.state,
         countryCode: 'BR',
       },
-      department: form.department,
+      department: '',
       vehicleId: form.vehicleId,
       email: form.email,
       initialPassword: form.initialPassword,
@@ -188,16 +187,13 @@ export default function DriverCreationPage() {
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço e departamento</h2>
+          <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <FormField id="address" label="Endereço" value={form.address} onChange={set('address')} error={errors.address} placeholder="Endereço completo" />
             </div>
             <FormField id="city" label="Cidade" value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" />
             <FormField id="state" label="Estado" value={form.state} onChange={set('state')} error={errors.state} placeholder="Estado" />
-            <div className="col-span-2">
-              <FormField id="department" label="Departamento" value={form.department} onChange={set('department')} error={errors.department} placeholder="Departamento" />
-            </div>
           </div>
         </div>
 

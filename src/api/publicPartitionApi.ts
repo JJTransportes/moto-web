@@ -143,9 +143,29 @@ export type FetchDepartmentsResult =
   | { ok: true; data: DepartmentOption[] }
   | { ok: false; status: number; message: string }
 
+export type FetchPartitionDepartmentsResult =
+  | { ok: true; data: DepartmentOption[] }
+  | { ok: false; status: number; message: string }
+
 export async function fetchDepartments(token: string): Promise<FetchDepartmentsResult> {
   const result = await fetchProtected<DepartmentOption[]>('/api/departments', token)
   if (result.ok) return { ok: true, data: result.data }
   return { ok: false, status: result.status, message: 'Erro ao carregar departamentos. Tente novamente.' }
+}
+
+export async function fetchPartitionDepartments(
+  token: string,
+  partitionId: string,
+): Promise<FetchPartitionDepartmentsResult> {
+  const result = await fetchProtected<DepartmentOption[]>(
+    `/api/public-partitions/${partitionId}/departments`,
+    token,
+  )
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    message: 'Erro ao carregar departamentos da unidade. Tente novamente.',
+  }
 }
 

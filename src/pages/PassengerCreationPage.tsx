@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import FormField from '../components/FormField'
 import ConfirmationModal from '../components/ConfirmationModal'
 import { createPassenger, type CreatePassengerRequest } from '../api/userApi'
-import { listPartitions, type PublicPartition } from '../api/publicPartitionApi'
+import { listPartitions, fetchPartitionDepartments, type PublicPartition, type DepartmentOption } from '../api/publicPartitionApi'
 import {
   validateFullName,
   validateCpf,
@@ -53,10 +53,34 @@ export default function PassengerCreationPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
   const [success, setSuccess] = useState(false)
+  const [departments, setDepartments] = useState<DepartmentOption[]>([])
+  const [departmentsLoading, setDepartmentsLoading] = useState(false)
+  const [departmentsError, setDepartmentsError] = useState<string | undefined>()
 
   useEffect(() => {
     if (token) listPartitions(token).then(r => { if (r.ok) setPartitions(r.data) })
   }, [token])
+
+  useEffect(() => {
+    if (!form.publicPartitionId || !token) {
+      setDepartments([])
+      setForm(f => ({ ...f, department: '' }))
+      return
+    }
+
+    setDepartmentsLoading(true)
+    setDepartmentsError(undefined)
+
+    fetchPartitionDepartments(token, form.publicPartitionId).then(result => {
+      setDepartmentsLoading(false)
+      if (result.ok) {
+        setDepartments(result.data)
+      } else {
+        setDepartmentsError(result.message)
+        setDepartments([])
+      }
+    })
+  }, [form.publicPartitionId, token])
 
   const set = (field: keyof FormValues) => (value: string) =>
     setForm(f => ({ ...f, [field]: value }))
@@ -161,22 +185,19 @@ export default function PassengerCreationPage() {
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço e departamento</h2>
+          <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <FormField id="address" label="Endereço" value={form.address} onChange={set('address')} error={errors.address} placeholder="Endereço completo" />
             </div>
             <FormField id="city" label="Cidade" value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" />
             <FormField id="state" label="Estado" value={form.state} onChange={set('state')} error={errors.state} placeholder="Estado" />
-            <div className="col-span-2">
-              <FormField id="department" label="Departamento" value={form.department} onChange={set('department')} error={errors.department} placeholder="Departamento" />
-            </div>
           </div>
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-gray-700">Unidade</h2>
-          <div className="grid grid-cols-1 gap-4">
+          <h2 className="mb-4 text-base font-semibold text-gray-700">Unidade e departamento</h2>
+          <div className="flex flex-col gap-4">
             <FormField
               id="publicPartitionId"
               label="Unidade pública"
@@ -186,6 +207,44 @@ export default function PassengerCreationPage() {
               error={errors.publicPartitionId}
               options={partitions.map(p => ({ value: p.partitionId, label: p.name }))}
             />
+
+            {form.publicPartitionId ? (
+              departmentsLoading ? (
+                <FormField
+                  id="department"
+                  label="Departamento"
+                  type="select"
+                  value=""
+                  onChange={() => {}}
+                  disabled
+                  options={[]}
+                />
+              ) : departmentsError ? (
+                <p className="text-sm text-red-500" role="alert">{departmentsError}</p>
+              ) : departments.length === 0 ? (
+                <p className="text-sm text-yellow-600">Nenhum departamento disponível para esta unidade.</p>
+              ) : (
+                <FormField
+                  id="department"
+                  label="Departamento"
+                  type="select"
+                  value={form.department}
+                  onChange={set('department')}
+                  error={errors.department}
+                  options={departments.map(d => ({ value: d.departmentId, label: d.name }))}
+                />
+              )
+            ) : (
+              <FormField
+                id="department"
+                label="Departamento"
+                type="select"
+                value=""
+                onChange={() => {}}
+                disabled
+                options={[]}
+              />
+            )}
           </div>
         </div>
 
