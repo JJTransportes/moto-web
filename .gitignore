@@ -29,3 +29,4 @@ chrome-user-data
 .claude/*.local.*
 .claude/worktrees
 .env
+.pi/remote-pi/config.json
