@@ -11,10 +11,9 @@ vi.mock('../api/travelApi', () => ({
   cancelTravel: vi.fn(),
 }))
 
-import { fetchTravelById, cancelTravel } from '../api/travelApi'
+import { fetchTravelById } from '../api/travelApi'
 
 const mockFetchById = fetchTravelById as ReturnType<typeof vi.fn>
-const mockCancel = cancelTravel as ReturnType<typeof vi.fn>
 
 function renderPage(travelId: string = 't-123') {
   sessionStorage.setItem('moto_admin_token', 'fake-token')

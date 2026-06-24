@@ -112,7 +112,7 @@ export default function Sidebar() {
 }
 
 function SidebarBranding() {
-  const { brandImageUrl, isLoading, error } = useBrandImage()
+  const { brandImageUrl, isLoading } = useBrandImage()
 
   if (isLoading) {
     return (

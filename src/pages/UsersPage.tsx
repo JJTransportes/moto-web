@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { listDrivers, listPassengers } from '../api/userListApi'
 import type { DriverListItem, PassengerListItem } from '../api/userListApi'
-import { Users, Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Users, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type Role = 'drivers' | 'passengers'
 type PageStatus = 'loading' | 'loaded' | 'error' | 'empty'

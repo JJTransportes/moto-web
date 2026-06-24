@@ -14,7 +14,7 @@ const mockedCreatePassenger = vi.mocked(createPassenger)
 const mockedListPartitions = vi.mocked(listPartitions)
 
 const STUB_PARTITIONS = [
-  { partitionId: 'part-1', name: 'Secretaria de TI', identifier: 'STI', acronym: 'STI', departments: 'TI' },
+  { partitionId: 'part-1', name: 'Secretaria de TI', identifier: 'STI', acronym: 'STI', departments: 'TI', categoryId: 'cat-1', categoryTitle: 'TI' },
 ]
 
 async function renderPage() {

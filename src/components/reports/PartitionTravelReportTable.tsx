@@ -106,6 +106,8 @@ export default function PartitionTravelReportTable({ data, loading }: Props) {
         return formatDistance(item.totalDistanceInMeters)
       case 'totalDurationInMinutes':
         return formatDuration(item.totalDurationInMinutes)
+      default:
+        return ''
     }
   }
 

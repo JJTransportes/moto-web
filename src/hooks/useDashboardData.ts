@@ -7,7 +7,7 @@ import {
   approveRegistration,
   rejectRegistration,
 } from '../api/dashboardApi'
-import type { DashboardData, PendingRegistration } from '../types/dashboard'
+import type { DashboardData } from '../types/dashboard'
 
 interface UseDashboardDataResult {
   data: DashboardData | null

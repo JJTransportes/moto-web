@@ -147,14 +147,6 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
 
           {/* Travel start/destination markers + polylines */}
           {visibleTravels.map((travel) => {
-            const statusColor =
-              travel.status === 'InProgress'
-                ? '#F97316'
-                : travel.status === 'Completed'
-                  ? '#22C55E'
-                  : travel.status === 'Cancelled'
-                    ? '#EF4444'
-                    : '#EAB308'
             return (
               <div key={`travel-${travel.travelId}`}>
                 <AdvancedMarker

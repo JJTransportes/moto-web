@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { fetchProtected } from '../api/authApi'
 import {
   listPartitions,
@@ -22,6 +22,8 @@ const SUMMARY = {
   identifier: 'SMTT-001',
   acronym: 'SMTT',
   departments: 'Transporte',
+  categoryId: 'cat-1',
+  categoryTitle: 'Transporte',
 }
 
 const DETAIL = {
@@ -93,7 +95,9 @@ describe('publicPartitionApi', () => {
       name: 'SMTT',
       identifier: 'SMTT-001',
       acronym: 'SMTT',
-      departments: 'Transporte',
+      departments: ['Transporte'],
+      categoryId: 'cat-1',
+      adminCode: 'ADMIN-001',
       adminId: 'admin-uuid',
       address: { lineOne: 'Rua A, 1', city: 'Maceió', state: 'AL', countryCode: 'BR' },
     }
@@ -132,7 +136,9 @@ describe('publicPartitionApi', () => {
       name: 'Updated',
       identifier: 'ID-002',
       acronym: 'UPD',
-      departments: 'Sec',
+      departments: ['Sec'],
+      categoryId: 'cat-1',
+      adminCode: 'ADMIN-001',
       adminId: null,
       address: { lineOne: 'Rua B, 2', city: 'Arapiraca', state: 'AL', countryCode: 'BR' },
     }

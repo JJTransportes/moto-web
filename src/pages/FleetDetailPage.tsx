@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { fetchVehicle, deleteVehicle, type Vehicle } from '../api/vehicleApi'
 import ConfirmationModal from '../components/ConfirmationModal'
-import { Car, Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 
 type PageStatus = 'loading' | 'loaded' | 'not-found' | 'error'
 

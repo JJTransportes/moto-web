@@ -18,7 +18,7 @@ export default function DashboardPage() {
   const activeView =
     searchParams.get('view') === 'map' ? 'map' : 'stats'
 
-  const { data: statsData, loading: statsLoading, error: statsError, retry: statsRetry } =
+  const { data: statsData, loading: statsLoading, error: statsError, retry: statsRetry, handleApprove, handleReject } =
     useDashboardData()
 
   const { data: mapData, loading: mapLoading, error: mapError, retry: mapRetry } =
@@ -61,8 +61,8 @@ export default function DashboardPage() {
               items={statsData.pendingRegistrations}
               loading={false}
               error={null}
-              onApprove={statsData.handleApprove}
-              onReject={statsData.handleReject}
+              onApprove={handleApprove}
+              onReject={handleReject}
               onRetry={statsRetry}
             />
             <section>

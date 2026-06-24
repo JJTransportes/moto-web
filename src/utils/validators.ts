@@ -15,6 +15,13 @@ export function validateCpf(cpf: string): string | undefined {
   return undefined
 }
 
+export function validateCnh(cnh: string): string | undefined {
+  const digits = cnh.replace(/\D/g, '')
+  if (digits.length !== 11) return 'CNH inválida.'
+  if (/^(\d)\1{10}$/.test(digits)) return 'CNH inválida.'
+  return undefined
+}
+
 export function validateRg(rg: string): string | undefined {
   if (!rg.trim()) return 'RG é obrigatório.'
   if (!/^[a-zA-Z0-9]+$/.test(rg.replace(/[\s.\-/]/g, ''))) {

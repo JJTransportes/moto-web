@@ -5,8 +5,7 @@ import { listDrivers, listPassengers } from '../api/userListApi'
 const originalFetch = globalThis.fetch
 
 function mockFetch(responseData: unknown, status = 200) {
-  globalThis.fetch = (async (url: RequestInfo | URL) => {
-    const urlStr = url.toString()
+  globalThis.fetch = (async (_url: RequestInfo | URL) => {
     return {
       ok: status >= 200 && status < 300,
       status,

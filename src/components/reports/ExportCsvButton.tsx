@@ -34,7 +34,6 @@ export default function ExportCsvButton({ startDate, endDate }: Props) {
       <AppButton
         onClick={handleExport}
         disabled={exporting}
-        variant="secondary"
       >
         {exporting ? 'Gerando...' : 'Gerar Relatório'}
       </AppButton>

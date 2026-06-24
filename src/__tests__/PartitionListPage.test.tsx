@@ -36,8 +36,8 @@ describe('PartitionListPage', () => {
     mockedList.mockResolvedValueOnce({
       ok: true,
       data: [
-        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte' },
-        { partitionId: 'pid-2', name: 'SEMED', identifier: 'SEMED-001', acronym: 'SEMED', departments: 'Educação' },
+        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte', categoryId: 'cat-1', categoryTitle: 'Transporte' },
+        { partitionId: 'pid-2', name: 'SEMED', identifier: 'SEMED-001', acronym: 'SEMED', departments: 'Educação', categoryId: 'cat-2', categoryTitle: 'Educação' },
       ],
     })
     renderPage()
@@ -49,7 +49,7 @@ describe('PartitionListPage', () => {
     mockedList.mockResolvedValueOnce({
       ok: true,
       data: [
-        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte' },
+        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte', categoryId: 'cat-1', categoryTitle: 'Transporte' },
       ],
     })
     renderPage()

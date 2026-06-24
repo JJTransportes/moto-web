@@ -50,7 +50,7 @@ export default function DateIntervalSelector({
           />
         </div>
 
-        <AppButton onClick={onApply} variant="primary">
+        <AppButton onClick={onApply}>
           Filtrar
         </AppButton>
       </div>
