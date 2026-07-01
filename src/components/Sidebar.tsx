@@ -1,4 +1,4 @@
-import { Building2, Car, ListStart, LogOut, Route, Settings, Users } from 'lucide-react'
+import { Building2, Car, FileText, ListStart, LogOut, Route, Settings, Users } from 'lucide-react'
 import { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -110,6 +110,9 @@ export default function Sidebar() {
         <SidebarNavLink to="/routes" label="Corridas" icon={Route} />
         {isGlobalAdmin && (
           <SidebarNavLink to="/reports" label="Relatórios" icon={ListStart} />
+        )}
+        {isGlobalAdmin && (
+          <SidebarNavLink to="/usage-terms" label="Termos de Uso" icon={FileText} />
         )}
         <SidebarNavLink to="/settings" label="Configurações" icon={Settings} />
       </nav>

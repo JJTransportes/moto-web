@@ -22,6 +22,7 @@ import FleetListPage from './pages/FleetListPage'
 import FleetCreationPage from './pages/FleetCreationPage'
 import FleetDetailPage from './pages/FleetDetailPage'
 import FleetEditPage from './pages/FleetEditPage'
+import UsageTermsPage from './pages/UsageTermsPage'
 
 function ComingSoonPage() {
   return (
@@ -75,6 +76,7 @@ export default function App() {
                 <Route path="/fleets/new" element={<FleetCreationPage />} />
                 <Route path="/fleets/:vehicleId" element={<FleetDetailPage />} />
                 <Route path="/fleets/:vehicleId/edit" element={<FleetEditPage />} />
+                <Route path="/usage-terms" element={<UsageTermsPage />} />
               </Route>
             </Route>
           </Route>
