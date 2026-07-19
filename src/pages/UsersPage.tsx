@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { listDrivers, listPassengers } from '../api/userListApi'
 import type { DriverListItem, PassengerListItem } from '../api/userListApi'
-import { Users, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { fetchUserProfilePhoto, deleteUserAccount } from '../api/userApi'
+import ConfirmationModal from '../components/ConfirmationModal'
+import UserAvatar from '../components/UserAvatar'
+import { Users, Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 
 type Role = 'drivers' | 'passengers'
 type PageStatus = 'loading' | 'loaded' | 'error' | 'empty'
@@ -41,7 +44,7 @@ function TableSkeleton() {
 }
 
 export default function UsersPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const navigate = useNavigate()
 
   const [role, setRole] = useState<Role>('drivers')
@@ -54,6 +57,13 @@ export default function UsersPage() {
   const [drivers, setDrivers] = useState<DriverListItem[]>([])
   const [passengers, setPassengers] = useState<PassengerListItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
+  const [photoMap, setPhotoMap] = useState<Map<string, string | null>>(new Map())
+
+  // Deletion state
+  const [deletingUser, setDeletingUser] = useState<{ userId: string; fullName: string } | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | undefined>()
+  const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortRef = useRef(false)
@@ -117,10 +127,65 @@ export default function UsersPage() {
     }
   }, [fetchData])
 
+  // Auto-dismiss success message after 4 seconds
+  useEffect(() => {
+    if (!successMessage) return
+    const timer = setTimeout(() => setSuccessMessage(undefined), 4000)
+    return () => clearTimeout(timer)
+  }, [successMessage])
+
+  const handleDelete = useCallback(async (adminCode: string) => {
+    if (!token || !deletingUser) return
+    setDeleteLoading(true)
+    setDeleteError(undefined)
+
+    const result = await deleteUserAccount(token, deletingUser.userId, adminCode)
+
+    if (result.ok) {
+      setDeletingUser(null)
+      setDeleteLoading(false)
+      setDeleteError(undefined)
+      setSuccessMessage(`Conta de ${deletingUser.fullName} excluída com sucesso.`)
+      await fetchData()
+    } else if (result.status === 401) {
+      setDeleteError(result.message)
+      setDeleteLoading(false)
+    } else {
+      setDeletingUser(null)
+      setDeleteLoading(false)
+      setDeleteError(undefined)
+      setSuccessMessage(result.message)
+    }
+  }, [token, deletingUser, fetchData])
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const isLoading = pageStatus === 'loading'
   const items: (DriverListItem | PassengerListItem)[] =
     role === 'drivers' ? drivers : passengers
+
+  // Fetch photos for visible items
+  useEffect(() => {
+    if (pageStatus !== 'loaded' || !token) return
+
+    const ids = items.map((item) =>
+      role === 'drivers'
+        ? (item as DriverListItem).userId
+        : (item as PassengerListItem).userId,
+    )
+
+    ids.forEach((id) => {
+      if (photoMap.has(id)) return
+      fetchUserProfilePhoto(token, id).then((result) => {
+        if (result.ok) {
+          setPhotoMap((prev) => {
+            const next = new Map(prev)
+            next.set(id, result.data.photoUrl)
+            return next
+          })
+        }
+      })
+    })
+  }, [pageStatus, items.length, role, token])
 
   return (
     <div className="space-y-6">
@@ -239,8 +304,22 @@ export default function UsersPage() {
               <tbody className="divide-y divide-gray-100">
                 {items.map((item) => (
                   <tr key={role === 'drivers' ? (item as DriverListItem).driverId : (item as PassengerListItem).passengerId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {item.fullName}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <UserAvatar
+                          photoUrl={(() => {
+                            const id = role === 'drivers'
+                              ? (item as DriverListItem).userId
+                              : (item as PassengerListItem).userId
+                            return photoMap.get(id) ?? null
+                          })()}
+                          fullName={item.fullName}
+                          size="sm"
+                        />
+                        <span className="text-sm font-medium text-gray-900">
+                          {item.fullName}
+                        </span>
+                      </div>
                     </td>
                     {role === 'drivers' ? (
                       <>
@@ -265,19 +344,39 @@ export default function UsersPage() {
                       <StatusBadge isActive={item.isActive} />
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          const userId =
-                            role === 'drivers'
-                              ? (item as DriverListItem).userId
-                              : (item as PassengerListItem).userId
-                          navigate(`/users/${role}/${userId}`)
-                        }}
-                        disabled={isLoading}
-                        className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Selecionar
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            const userId =
+                              role === 'drivers'
+                                ? (item as DriverListItem).userId
+                                : (item as PassengerListItem).userId
+                            navigate(`/users/${role}/${userId}`)
+                          }}
+                          disabled={isLoading}
+                          className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Selecionar
+                        </button>
+                        {item.isActive && item.userId !== user?.userId && (
+                          <button
+                            onClick={() =>
+                              setDeletingUser({
+                                userId:
+                                  role === 'drivers'
+                                    ? (item as DriverListItem).userId
+                                    : (item as PassengerListItem).userId,
+                                fullName: item.fullName,
+                              })
+                            }
+                            disabled={isLoading}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Excluir
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -313,6 +412,31 @@ export default function UsersPage() {
           )}
         </>
       )}
+
+      {/* Success notification */}
+      {successMessage && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deletingUser !== null}
+        title="Excluir conta"
+        description={
+          deletingUser
+            ? `Tem certeza que deseja excluir a conta de ${deletingUser.fullName}? Esta ação é irreversível.`
+            : ''
+        }
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setDeletingUser(null)
+          setDeleteError(undefined)
+        }}
+        loading={deleteLoading}
+        error={deleteError}
+      />
     </div>
   )
 }

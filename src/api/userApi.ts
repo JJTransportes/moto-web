@@ -38,6 +38,61 @@ export async function fetchDriverProfile(token: string, userId: string): Promise
   }
 }
 
+export interface AddressCommand {
+  lineOne: string
+  lineTwo?: string | null
+  district?: string | null
+  city: string
+  state: string
+  postalCode?: string | null
+  countryCode: string
+}
+
+export interface PassengerDepartmentDto {
+  departmentId: string
+  name: string
+}
+
+export interface PassengerProfile {
+  passengerId: string
+  fullName: string
+  email: string
+  cpf: string
+  rg: string
+  registration: string
+  birthdate: string
+  address: AddressCommand
+  publicPartitionId: string
+  publicPartitionName: string
+  departments: PassengerDepartmentDto[]
+  isActive: boolean
+  createdAt: string
+  solicitationCount: number
+}
+
+export type PassengerProfileResult =
+  | { ok: true; data: PassengerProfile }
+  | { ok: false; status: number; message: string }
+
+export async function fetchPassengerProfile(
+  token: string,
+  passengerId: string,
+): Promise<PassengerProfileResult> {
+  const result = await fetchProtected<PassengerProfile>(
+    `/api/passengers/${passengerId}`,
+    token,
+  )
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    message:
+      result.status === 404
+        ? 'Passageiro não encontrado.'
+        : 'Erro ao carregar dados do passageiro. Tente novamente.',
+  }
+}
+
 export async function changeDriverVehicle(
   token: string,
   driverId: string,
@@ -57,16 +112,6 @@ export async function changeDriverVehicle(
         ? 'Este veículo já está associado a outro motorista.'
         : 'Erro ao alterar veículo. Tente novamente.',
   }
-}
-
-export interface AddressCommand {
-  lineOne: string
-  lineTwo?: string | null
-  district?: string | null
-  city: string
-  state: string
-  postalCode?: string | null
-  countryCode: string
 }
 
 export interface CreatePassengerRequest {
@@ -128,4 +173,70 @@ export const createPassenger = (token: string, body: CreatePassengerRequest) =>
 
 export const createDriver = (token: string, body: CreateDriverRequest) =>
   createUser('/api/drivers', token, body)
+
+export interface UserProfilePhoto {
+  photoUrl: string | null
+}
+
+export type UserProfilePhotoResult =
+  | { ok: true; data: UserProfilePhoto }
+  | { ok: false; status: number; message: string }
+
+export interface DeleteUserAccountResponse {
+  userId: string
+  message: string
+}
+
+export type DeleteUserAccountResult =
+  | { ok: true; data: DeleteUserAccountResponse }
+  | { ok: false; status: number; message: string }
+
+export async function deleteUserAccount(
+  token: string,
+  userId: string,
+  adminCode: string,
+): Promise<DeleteUserAccountResult> {
+  const result = await fetchProtected<DeleteUserAccountResponse>(
+    `/api/users/${userId}`,
+    token,
+    {
+      method: 'DELETE',
+      body: JSON.stringify({ adminCode }),
+    },
+  )
+
+  if (result.ok) return { ok: true, data: result.data }
+
+  const message =
+    result.status === 400
+      ? 'Você não pode excluir sua própria conta. Solicite que outro administrador realize a exclusão.'
+      : result.status === 401
+        ? 'Código do administrador inválido.'
+        : result.status === 404
+          ? 'Usuário não encontrado.'
+          : result.status === 409
+            ? 'Não é possível excluir este usuário. Verifique se a conta está ativa e sem viagens em andamento.'
+            : 'Erro ao excluir usuário. Tente novamente.'
+
+  return { ok: false, status: result.status, message }
+}
+
+export async function fetchUserProfilePhoto(
+  token: string,
+  userId: string,
+): Promise<UserProfilePhotoResult> {
+  const result = await fetchProtected<UserProfilePhoto>(
+    `/api/users/${userId}/profile`,
+    token,
+  )
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    message:
+      result.status === 404
+        ? 'Perfil não encontrado.'
+        : 'Erro ao carregar foto do perfil. Tente novamente.',
+  }
+}
 
