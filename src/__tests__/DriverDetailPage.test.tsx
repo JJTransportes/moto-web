@@ -10,6 +10,10 @@ import { fetchAvailableVehicles } from '../api/vehicleApi'
 vi.mock('../api/userApi', () => ({
   fetchDriverProfile: vi.fn(),
   changeDriverVehicle: vi.fn(),
+  fetchUserProfilePhoto: vi.fn().mockResolvedValue({
+    ok: true,
+    data: { photoUrl: null },
+  }),
 }))
 
 vi.mock('../api/vehicleApi', () => ({

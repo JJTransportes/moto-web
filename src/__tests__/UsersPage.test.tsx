@@ -5,10 +5,17 @@ import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
 import UsersPage from '../pages/UsersPage'
 
-// Mock the API module
+// Mock the API modules
 vi.mock('../api/userListApi', () => ({
   listDrivers: vi.fn(),
   listPassengers: vi.fn(),
+}))
+
+vi.mock('../api/userApi', () => ({
+  fetchUserProfilePhoto: vi.fn().mockResolvedValue({
+    ok: true,
+    data: { photoUrl: null },
+  }),
 }))
 
 import { listDrivers, listPassengers } from '../api/userListApi'

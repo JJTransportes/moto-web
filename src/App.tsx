@@ -23,6 +23,7 @@ import FleetCreationPage from './pages/FleetCreationPage'
 import FleetDetailPage from './pages/FleetDetailPage'
 import FleetEditPage from './pages/FleetEditPage'
 import UsageTermsPage from './pages/UsageTermsPage'
+import PassengerDetailPage from './pages/PassengerDetailPage'
 
 function ComingSoonPage() {
   return (
@@ -61,7 +62,7 @@ export default function App() {
               <Route element={<ProtectedRoute requiredRole="GlobalAdmin" />}>
                 <Route path="/users" element={<UsersPage />} />
                 <Route path="/users/drivers/:userId" element={<DriverDetailPage />} />
-                <Route path="/users/passengers/:userId" element={<ComingSoonPage />} />
+                <Route path="/users/passengers/:userId" element={<PassengerDetailPage />} />
                 <Route path="/users/passengers/new" element={<PassengerCreationPage />} />
                 <Route path="/users/drivers/new" element={<DriverCreationPage />} />
                 <Route path="/settings" element={<SettingsPage />} />

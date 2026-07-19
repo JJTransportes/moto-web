@@ -4,11 +4,15 @@ import { useAuth } from '../auth/AuthContext'
 import {
   fetchDriverProfile,
   changeDriverVehicle,
+  fetchUserProfilePhoto,
+  deleteUserAccount,
   type DriverProfile,
 } from '../api/userApi'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
+import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
-import { ArrowLeft, Car, User, Mail, Loader2 } from 'lucide-react'
+import UserAvatar from '../components/UserAvatar'
+import { ArrowLeft, Car, User, Mail, Loader2, Trash2, AlertTriangle } from 'lucide-react'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -29,12 +33,13 @@ function DetailSkeleton() {
 
 export default function DriverDetailPage() {
   const { userId } = useParams<{ userId: string }>()
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const navigate = useNavigate()
 
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState<string>()
   const [driver, setDriver] = useState<DriverProfile | null>(null)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
   // Vehicle switching state
   const [vehicles, setVehicles] = useState<AvailableVehicle[]>([])
@@ -42,6 +47,11 @@ export default function DriverDetailPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState('')
   const [switching, setSwitching] = useState(false)
   const [switchError, setSwitchError] = useState<string>()
+
+  // Deletion state
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | undefined>()
+  const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const loadDriver = useCallback(async () => {
     if (!token || !userId) return
@@ -52,6 +62,12 @@ export default function DriverDetailPage() {
     if (result.ok) {
       setDriver(result.data)
       setPageStatus('loaded')
+
+      // Fetch profile photo
+      const photoResult = await fetchUserProfilePhoto(token, userId)
+      if (photoResult.ok) {
+        setPhotoUrl(photoResult.data.photoUrl)
+      }
     } else if (result.status === 404) {
       setPageStatus('notFound')
     } else {
@@ -72,6 +88,35 @@ export default function DriverDetailPage() {
     loadDriver()
     loadAvailableVehicles()
   }, [loadDriver, loadAvailableVehicles])
+
+  // Auto-dismiss success message after 4 seconds
+  useEffect(() => {
+    if (!successMessage) return
+    const timer = setTimeout(() => setSuccessMessage(undefined), 4000)
+    return () => clearTimeout(timer)
+  }, [successMessage])
+
+  const handleDelete = useCallback(async (adminCode: string) => {
+    if (!token || !userId) return
+    setDeleting(true)
+    setDeleteError(undefined)
+
+    const result = await deleteUserAccount(token, userId, adminCode)
+
+    if (result.ok) {
+      setDeleting(false)
+      setDeleteError(undefined)
+      setSuccessMessage('Conta excluída com sucesso.')
+      await loadDriver()
+    } else if (result.status === 401) {
+      setDeleteError(result.message)
+      setDeleting(false)
+    } else {
+      setDeleting(false)
+      setDeleteError(undefined)
+      setSuccessMessage(result.message)
+    }
+  }, [token, userId, loadDriver])
 
   const handleSwitchVehicle = async () => {
     if (!token || !userId || !selectedVehicleId) return
@@ -149,6 +194,7 @@ export default function DriverDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Voltar
         </button>
+        <UserAvatar photoUrl={photoUrl} fullName={driver.fullName} size="lg" />
         <h1 className="text-2xl font-bold text-gray-800">{driver.fullName}</h1>
       </div>
 
@@ -253,6 +299,49 @@ export default function DriverDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Danger Zone */}
+      {userId !== user?.userId && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+          <h2 className="mb-2 flex items-center gap-2 text-base font-semibold text-red-700">
+            <AlertTriangle className="h-5 w-5" />
+            Zona de Perigo
+          </h2>
+          <p className="mb-4 text-sm text-red-600">
+            Excluir esta conta irá desativá-la permanentemente. O motorista não poderá mais
+            acessar o sistema ou realizar viagens.
+          </p>
+          <button
+            onClick={() => setDeleting(true)}
+            disabled={deleting}
+            className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 className="h-4 w-4" />
+            Excluir conta
+          </button>
+        </div>
+      )}
+
+      {/* Success notification */}
+      {successMessage && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {successMessage}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleting}
+        title="Excluir conta"
+        description={`Tem certeza que deseja excluir a conta de ${driver.fullName}? Esta ação é irreversível.`}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setDeleting(false)
+          setDeleteError(undefined)
+        }}
+        loading={deleting}
+        error={deleteError}
+      />
     </div>
   )
 }
