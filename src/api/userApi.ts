@@ -16,6 +16,18 @@ export interface DriverProfile {
   cnh: string | null
   department: string | null
   vehicle: VehicleInfo | null
+
+  // Enhanced fields
+  rg?: string | null
+  birthdate?: string
+  isActive?: boolean
+  access?: string
+  city?: string | null
+  state?: string | null
+  createdAt?: string
+  categoryTitle?: string | null
+  travelCount?: number
+  photoUrl?: string | null
 }
 
 export type DriverProfileResult =
@@ -68,6 +80,12 @@ export interface PassengerProfile {
   isActive: boolean
   createdAt: string
   solicitationCount: number
+
+  // Enhanced fields
+  access?: string
+  city?: string | null
+  state?: string | null
+  photoUrl?: string | null
 }
 
 export type PassengerProfileResult =
