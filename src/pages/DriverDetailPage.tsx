@@ -1,18 +1,18 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/AuthContext'
+import { AlertTriangle, ArrowLeft, Briefcase, Calendar, Car, Loader2, Mail, MapPin, ShieldCheck, ShieldX, Trash2, User } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
-  fetchDriverProfile,
   changeDriverVehicle,
-  fetchUserProfilePhoto,
   deleteUserAccount,
+  fetchDriverProfile,
+  fetchUserProfilePhoto,
   type DriverProfile,
 } from '../api/userApi'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
+import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
 import UserAvatar from '../components/UserAvatar'
-import { ArrowLeft, Car, User, Mail, Loader2, Trash2, AlertTriangle } from 'lucide-react'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -21,10 +21,11 @@ function DetailSkeleton() {
     <div className="space-y-6 animate-pulse">
       <div className="h-8 bg-gray-200 rounded w-64" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="h-20 bg-gray-200 rounded-xl" />
         ))}
       </div>
+      <div className="h-32 bg-gray-200 rounded-xl" />
       <div className="h-32 bg-gray-200 rounded-xl" />
       <div className="h-20 bg-gray-200 rounded-xl" />
     </div>
@@ -63,10 +64,14 @@ export default function DriverDetailPage() {
       setDriver(result.data)
       setPageStatus('loaded')
 
-      // Fetch profile photo
-      const photoResult = await fetchUserProfilePhoto(token, userId)
-      if (photoResult.ok) {
-        setPhotoUrl(photoResult.data.photoUrl)
+      // Use photoUrl from profile if available, otherwise fetch separately
+      if (result.data.photoUrl) {
+        setPhotoUrl(result.data.photoUrl)
+      } else {
+        const photoResult = await fetchUserProfilePhoto(token, userId)
+        if (photoResult.ok) {
+          setPhotoUrl(photoResult.data.photoUrl)
+        }
       }
     } else if (result.status === 404) {
       setPageStatus('notFound')
@@ -138,6 +143,14 @@ export default function DriverDetailPage() {
 
   const canSwitch = selectedVehicleId && !switching
 
+  const formatDate = (iso: string) => {
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
+
   if (pageStatus === 'loading') return <DetailSkeleton />
 
   if (pageStatus === 'notFound') {
@@ -196,6 +209,21 @@ export default function DriverDetailPage() {
         </button>
         <UserAvatar photoUrl={photoUrl} fullName={driver.fullName} size="lg" />
         <h1 className="text-2xl font-bold text-gray-800">{driver.fullName}</h1>
+        {driver.isActive !== undefined && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${driver.isActive
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
+              }`}
+          >
+            {driver.isActive ? (
+              <ShieldCheck className="h-3.5 w-3.5" />
+            ) : (
+              <ShieldX className="h-3.5 w-3.5" />
+            )}
+            {driver.isActive ? 'Ativo' : 'Inativo'}
+          </span>
+        )}
       </div>
 
       {/* Driver Info Cards */}
@@ -211,9 +239,45 @@ export default function DriverDetailPage() {
           value={driver.email}
         />
         {driver.cpf && <InfoCard label="CPF" value={driver.cpf} />}
+        {driver.rg && <InfoCard label="RG" value={driver.rg} />}
         {driver.cnh && <InfoCard label="CNH" value={driver.cnh} />}
+        {driver.birthdate && (
+          <InfoCard
+            icon={<Calendar className="h-4 w-4 text-blue-500" />}
+            label="Data de nascimento"
+            value={formatDate(driver.birthdate)}
+          />
+        )}
+        {driver.access && (
+          <InfoCard
+            icon={<ShieldCheck className="h-4 w-4 text-blue-500" />}
+            label="Nível de acesso"
+            value={driver.access === 'Admin' ? 'Administrador' : 'Usuário'}
+          />
+        )}
         {driver.department && (
           <InfoCard label="Departamento" value={driver.department} />
+        )}
+        {(driver.city || driver.state) && (
+          <InfoCard
+            icon={<MapPin className="h-4 w-4 text-blue-500" />}
+            label="Cidade/Estado"
+            value={[driver.city, driver.state].filter(Boolean).join('/')}
+          />
+        )}
+        {driver.createdAt && (
+          <InfoCard
+            icon={<Calendar className="h-4 w-4 text-blue-500" />}
+            label="Data de cadastro"
+            value={formatDate(driver.createdAt)}
+          />
+        )}
+        {driver.travelCount !== undefined && (
+          <InfoCard
+            icon={<Briefcase className="h-4 w-4 text-blue-500" />}
+            label="Total de Viagens"
+            value={String(driver.travelCount)}
+          />
         )}
       </div>
 
@@ -225,6 +289,12 @@ export default function DriverDetailPage() {
         </h2>
         {driver.vehicle ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {driver.categoryTitle && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Categoria</p>
+                <p className="mt-1 text-sm font-medium text-gray-800">{driver.categoryTitle}</p>
+              </div>
+            )}
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Marca</p>
               <p className="mt-1 text-sm font-medium text-gray-800">{driver.vehicle.brand}</p>

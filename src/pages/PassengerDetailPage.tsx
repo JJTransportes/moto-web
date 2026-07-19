@@ -66,10 +66,14 @@ export default function PassengerDetailPage() {
       setPassenger(result.data)
       setPageStatus('loaded')
 
-      // Fetch profile photo
-      const photoResult = await fetchUserProfilePhoto(token, userId)
-      if (photoResult.ok) {
-        setPhotoUrl(photoResult.data.photoUrl)
+      // Use photoUrl from profile if available, otherwise fetch separately
+      if (result.data.photoUrl) {
+        setPhotoUrl(result.data.photoUrl)
+      } else {
+        const photoResult = await fetchUserProfilePhoto(token, userId)
+        if (photoResult.ok) {
+          setPhotoUrl(photoResult.data.photoUrl)
+        }
       }
     } else if (result.status === 404) {
       setPageStatus('notFound')
@@ -239,6 +243,20 @@ export default function PassengerDetailPage() {
           label="Solicitações"
           value={String(passenger.solicitationCount)}
         />
+        {passenger.access && (
+          <InfoCard
+            icon={<ShieldCheck className="h-4 w-4 text-blue-500" />}
+            label="Nível de acesso"
+            value={passenger.access === 'Admin' ? 'Administrador' : 'Usuário'}
+          />
+        )}
+        {(passenger.city || passenger.state) && (
+          <InfoCard
+            icon={<MapPin className="h-4 w-4 text-blue-500" />}
+            label="Cidade/Estado"
+            value={[passenger.city, passenger.state].filter(Boolean).join('/')}
+          />
+        )}
       </div>
 
       {/* Departments Section */}
