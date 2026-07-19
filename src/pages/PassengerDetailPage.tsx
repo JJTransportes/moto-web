@@ -1,28 +1,28 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/AuthContext'
 import {
-  fetchPassengerProfile,
-  fetchUserProfilePhoto,
-  deleteUserAccount,
-  type PassengerProfile,
-} from '../api/userApi'
-import ConfirmationModal from '../components/ConfirmationModal'
-import UserAvatar from '../components/UserAvatar'
-import {
+  AlertTriangle,
   ArrowLeft,
-  User,
-  Mail,
-  Hash,
-  Calendar,
   Building2,
+  Calendar,
+  ClipboardList,
+  Hash,
+  Mail,
+  MapPin,
   ShieldCheck,
   ShieldX,
-  ClipboardList,
-  MapPin,
   Trash2,
-  AlertTriangle,
+  User,
 } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import {
+  deleteUserAccount,
+  fetchPassengerProfile,
+  fetchUserProfilePhoto,
+  type PassengerProfile,
+} from '../api/userApi'
+import { useAuth } from '../auth/AuthContext'
+import ConfirmationModal from '../components/ConfirmationModal'
+import UserAvatar from '../components/UserAvatar'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -119,18 +119,6 @@ export default function PassengerDetailPage() {
       year: 'numeric',
     })
   }
-
-  const formatAddress = (address: PassengerProfile['address']) => {
-    const parts: string[] = [address.lineOne]
-    if (address.lineTwo) parts.push(address.lineTwo)
-    if (address.district) parts.push(address.district)
-    const cityState = [address.city, address.state].filter(Boolean).join('/')
-    if (cityState) parts.push(cityState)
-    if (address.postalCode) parts.push(address.postalCode)
-    parts.push(address.countryCode)
-    return parts.join(', ')
-  }
-
   if (pageStatus === 'loading') return <DetailSkeleton />
 
   if (pageStatus === 'notFound') {
@@ -190,11 +178,10 @@ export default function PassengerDetailPage() {
         <UserAvatar photoUrl={photoUrl} fullName={passenger.fullName} size="lg" />
         <h1 className="text-2xl font-bold text-gray-800">{passenger.fullName}</h1>
         <span
-          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-            passenger.isActive
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${passenger.isActive
               ? 'bg-green-100 text-green-700'
               : 'bg-red-100 text-red-700'
-          }`}
+            }`}
         >
           {passenger.isActive ? (
             <ShieldCheck className="h-3.5 w-3.5" />
