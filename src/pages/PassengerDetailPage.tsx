@@ -53,6 +53,7 @@ export default function PassengerDetailPage() {
 
   // Deletion state
   const [deleting, setDeleting] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
@@ -96,21 +97,23 @@ export default function PassengerDetailPage() {
 
   const handleDelete = useCallback(async (adminCode: string) => {
     if (!token || !passengerId) return
-    setDeleting(true)
+    setDeleteLoading(true)
     setDeleteError(undefined)
 
     const result = await deleteUserAccount(token, passengerId, adminCode)
 
     if (result.ok) {
       setDeleting(false)
+      setDeleteLoading(false)
       setDeleteError(undefined)
       setSuccessMessage('Conta excluída com sucesso.')
       await loadPassenger()
     } else if (result.status === 401) {
       setDeleteError(result.message)
-      setDeleting(false)
+      setDeleteLoading(false)
     } else {
       setDeleting(false)
+      setDeleteLoading(false)
       setDeleteError(undefined)
       setSuccessMessage(result.message)
     }
@@ -363,7 +366,7 @@ export default function PassengerDetailPage() {
           </p>
           <button
             onClick={() => setDeleting(true)}
-            disabled={deleting}
+            disabled={deleteLoading}
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
@@ -390,7 +393,7 @@ export default function PassengerDetailPage() {
             setDeleting(false)
             setDeleteError(undefined)
           }}
-          loading={deleting}
+          loading={deleteLoading}
           error={deleteError}
         />
       )}
