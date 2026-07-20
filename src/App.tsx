@@ -50,8 +50,8 @@ export default function App() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route element={<ProtectedRoute requiredRole="GlobalAdmin" />}>
                   <Route path="/users" element={<UsersPage />} />
-                  <Route path="/users/drivers/:userId" element={<DriverDetailPage />} />
-                  <Route path="/users/passengers/:userId" element={<PassengerDetailPage />} />
+                  <Route path="/users/drivers/:driverId" element={<DriverDetailPage />} />
+                  <Route path="/users/passengers/:passengerId" element={<PassengerDetailPage />} />
                   <Route path="/users/passengers/new" element={<PassengerCreationPage />} />
                   <Route path="/users/drivers/new" element={<DriverCreationPage />} />
                   <Route path="/settings" element={<SettingsPage />} />

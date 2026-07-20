@@ -33,7 +33,7 @@ function DetailSkeleton() {
 }
 
 export default function DriverDetailPage() {
-  const { userId } = useParams<{ userId: string }>()
+  const { driverId } = useParams<{ driverId: string }>()
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
@@ -55,11 +55,11 @@ export default function DriverDetailPage() {
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const loadDriver = useCallback(async () => {
-    if (!token || !userId) return
+    if (!token || !driverId) return
     setPageStatus('loading')
     setErrorMessage(undefined)
 
-    const result = await fetchDriverProfile(token, userId)
+    const result = await fetchDriverProfile(token, driverId)
     if (result.ok) {
       setDriver(result.data)
       setPageStatus('loaded')
@@ -68,7 +68,7 @@ export default function DriverDetailPage() {
       if (result.data.photoUrl) {
         setPhotoUrl(result.data.photoUrl)
       } else {
-        const photoResult = await fetchUserProfilePhoto(token, userId)
+        const photoResult = await fetchUserProfilePhoto(token, driverId)
         if (photoResult.ok) {
           setPhotoUrl(photoResult.data.photoUrl)
         }
@@ -79,7 +79,7 @@ export default function DriverDetailPage() {
       setErrorMessage(result.message)
       setPageStatus('error')
     }
-  }, [token, userId])
+  }, [token, driverId])
 
   const loadAvailableVehicles = useCallback(async () => {
     if (!token) return
@@ -102,11 +102,11 @@ export default function DriverDetailPage() {
   }, [successMessage])
 
   const handleDelete = useCallback(async (adminCode: string) => {
-    if (!token || !userId) return
+    if (!token || !driverId) return
     setDeleting(true)
     setDeleteError(undefined)
 
-    const result = await deleteUserAccount(token, userId, adminCode)
+    const result = await deleteUserAccount(token, driverId, adminCode)
 
     if (result.ok) {
       setDeleting(false)
@@ -121,14 +121,14 @@ export default function DriverDetailPage() {
       setDeleteError(undefined)
       setSuccessMessage(result.message)
     }
-  }, [token, userId, loadDriver])
+  }, [token, driverId, loadDriver])
 
   const handleSwitchVehicle = async () => {
-    if (!token || !userId || !selectedVehicleId) return
+    if (!token || !driverId || !selectedVehicleId) return
     setSwitching(true)
     setSwitchError(undefined)
 
-    const result = await changeDriverVehicle(token, userId, selectedVehicleId)
+    const result = await changeDriverVehicle(token, driverId, selectedVehicleId)
     if (result.ok) {
       setSelectedVehicleId('')
       setSwitchError(undefined)
@@ -371,7 +371,7 @@ export default function DriverDetailPage() {
       </div>
 
       {/* Danger Zone */}
-      {userId !== user?.userId && (
+      {driverId !== user?.userId && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6">
           <h2 className="mb-2 flex items-center gap-2 text-base font-semibold text-red-700">
             <AlertTriangle className="h-5 w-5" />

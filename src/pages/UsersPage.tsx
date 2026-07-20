@@ -347,11 +347,11 @@ export default function UsersPage() {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => {
-                            const userId =
+                            const navigateId =
                               role === 'drivers'
-                                ? (item as DriverListItem).userId
-                                : (item as PassengerListItem).userId
-                            navigate(`/users/${role}/${userId}`)
+                                ? (item as DriverListItem).driverId
+                                : (item as PassengerListItem).passengerId
+                            navigate(`/users/${role}/${navigateId}`)
                           }}
                           disabled={isLoading}
                           className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
