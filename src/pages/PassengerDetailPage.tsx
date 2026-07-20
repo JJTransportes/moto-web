@@ -42,7 +42,7 @@ function DetailSkeleton() {
 }
 
 export default function PassengerDetailPage() {
-  const { userId } = useParams<{ userId: string }>()
+  const { passengerId } = useParams<{ passengerId: string }>()
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
@@ -53,15 +53,16 @@ export default function PassengerDetailPage() {
 
   // Deletion state
   const [deleting, setDeleting] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const loadPassenger = useCallback(async () => {
-    if (!token || !userId) return
+    if (!token || !passengerId) return
     setPageStatus('loading')
     setErrorMessage(undefined)
 
-    const result = await fetchPassengerProfile(token, userId)
+    const result = await fetchPassengerProfile(token, passengerId)
     if (result.ok) {
       setPassenger(result.data)
       setPageStatus('loaded')
@@ -70,7 +71,7 @@ export default function PassengerDetailPage() {
       if (result.data.photoUrl) {
         setPhotoUrl(result.data.photoUrl)
       } else {
-        const photoResult = await fetchUserProfilePhoto(token, userId)
+        const photoResult = await fetchUserProfilePhoto(token, passengerId)
         if (photoResult.ok) {
           setPhotoUrl(photoResult.data.photoUrl)
         }
@@ -81,7 +82,7 @@ export default function PassengerDetailPage() {
       setErrorMessage(result.message)
       setPageStatus('error')
     }
-  }, [token, userId])
+  }, [token, passengerId])
 
   useEffect(() => {
     loadPassenger()
@@ -95,26 +96,28 @@ export default function PassengerDetailPage() {
   }, [successMessage])
 
   const handleDelete = useCallback(async (adminCode: string) => {
-    if (!token || !userId) return
-    setDeleting(true)
+    if (!token || !passengerId) return
+    setDeleteLoading(true)
     setDeleteError(undefined)
 
-    const result = await deleteUserAccount(token, userId, adminCode)
+    const result = await deleteUserAccount(token, passengerId, adminCode)
 
     if (result.ok) {
       setDeleting(false)
+      setDeleteLoading(false)
       setDeleteError(undefined)
       setSuccessMessage('Conta excluída com sucesso.')
       await loadPassenger()
     } else if (result.status === 401) {
       setDeleteError(result.message)
-      setDeleting(false)
+      setDeleteLoading(false)
     } else {
       setDeleting(false)
+      setDeleteLoading(false)
       setDeleteError(undefined)
       setSuccessMessage(result.message)
     }
-  }, [token, userId, loadPassenger])
+  }, [token, passengerId, loadPassenger])
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString('pt-BR', {
@@ -351,7 +354,7 @@ export default function PassengerDetailPage() {
       </div>
 
       {/* Danger Zone */}
-      {userId !== user?.userId && passenger.isActive && (
+      {passengerId !== user?.userId && passenger.isActive && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6">
           <h2 className="mb-2 flex items-center gap-2 text-base font-semibold text-red-700">
             <AlertTriangle className="h-5 w-5" />
@@ -363,7 +366,7 @@ export default function PassengerDetailPage() {
           </p>
           <button
             onClick={() => setDeleting(true)}
-            disabled={deleting}
+            disabled={deleteLoading}
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
@@ -390,7 +393,7 @@ export default function PassengerDetailPage() {
             setDeleting(false)
             setDeleteError(undefined)
           }}
-          loading={deleting}
+          loading={deleteLoading}
           error={deleteError}
         />
       )}

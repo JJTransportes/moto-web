@@ -33,7 +33,7 @@ function DetailSkeleton() {
 }
 
 export default function DriverDetailPage() {
-  const { userId } = useParams<{ userId: string }>()
+  const { driverId } = useParams<{ driverId: string }>()
   const { token, user } = useAuth()
   const navigate = useNavigate()
 
@@ -51,15 +51,16 @@ export default function DriverDetailPage() {
 
   // Deletion state
   const [deleting, setDeleting] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const loadDriver = useCallback(async () => {
-    if (!token || !userId) return
+    if (!token || !driverId) return
     setPageStatus('loading')
     setErrorMessage(undefined)
 
-    const result = await fetchDriverProfile(token, userId)
+    const result = await fetchDriverProfile(token, driverId)
     if (result.ok) {
       setDriver(result.data)
       setPageStatus('loaded')
@@ -68,7 +69,7 @@ export default function DriverDetailPage() {
       if (result.data.photoUrl) {
         setPhotoUrl(result.data.photoUrl)
       } else {
-        const photoResult = await fetchUserProfilePhoto(token, userId)
+        const photoResult = await fetchUserProfilePhoto(token, driverId)
         if (photoResult.ok) {
           setPhotoUrl(photoResult.data.photoUrl)
         }
@@ -79,7 +80,7 @@ export default function DriverDetailPage() {
       setErrorMessage(result.message)
       setPageStatus('error')
     }
-  }, [token, userId])
+  }, [token, driverId])
 
   const loadAvailableVehicles = useCallback(async () => {
     if (!token) return
@@ -102,33 +103,35 @@ export default function DriverDetailPage() {
   }, [successMessage])
 
   const handleDelete = useCallback(async (adminCode: string) => {
-    if (!token || !userId) return
-    setDeleting(true)
+    if (!token || !driverId) return
+    setDeleteLoading(true)
     setDeleteError(undefined)
 
-    const result = await deleteUserAccount(token, userId, adminCode)
+    const result = await deleteUserAccount(token, driverId, adminCode)
 
     if (result.ok) {
       setDeleting(false)
+      setDeleteLoading(false)
       setDeleteError(undefined)
       setSuccessMessage('Conta excluída com sucesso.')
       await loadDriver()
     } else if (result.status === 401) {
       setDeleteError(result.message)
-      setDeleting(false)
+      setDeleteLoading(false)
     } else {
       setDeleting(false)
+      setDeleteLoading(false)
       setDeleteError(undefined)
       setSuccessMessage(result.message)
     }
-  }, [token, userId, loadDriver])
+  }, [token, driverId, loadDriver])
 
   const handleSwitchVehicle = async () => {
-    if (!token || !userId || !selectedVehicleId) return
+    if (!token || !driverId || !selectedVehicleId) return
     setSwitching(true)
     setSwitchError(undefined)
 
-    const result = await changeDriverVehicle(token, userId, selectedVehicleId)
+    const result = await changeDriverVehicle(token, driverId, selectedVehicleId)
     if (result.ok) {
       setSelectedVehicleId('')
       setSwitchError(undefined)
@@ -207,13 +210,13 @@ export default function DriverDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Voltar
         </button>
-        <UserAvatar photoUrl={photoUrl} fullName={driver.fullName} size="lg" />
-        <h1 className="text-2xl font-bold text-gray-800">{driver.fullName}</h1>
+        <UserAvatar photoUrl={photoUrl} fullName={driver.name} size="lg" />
+        <h1 className="text-2xl font-bold text-gray-800">{driver.name}</h1>
         {driver.isActive !== undefined && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${driver.isActive
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
               }`}
           >
             {driver.isActive ? (
@@ -231,7 +234,7 @@ export default function DriverDetailPage() {
         <InfoCard
           icon={<User className="h-4 w-4 text-blue-500" />}
           label="Nome completo"
-          value={driver.fullName}
+          value={driver.name}
         />
         <InfoCard
           icon={<Mail className="h-4 w-4 text-blue-500" />}
@@ -254,9 +257,6 @@ export default function DriverDetailPage() {
             label="Nível de acesso"
             value={driver.access === 'Admin' ? 'Administrador' : 'Usuário'}
           />
-        )}
-        {driver.department && (
-          <InfoCard label="Departamento" value={driver.department} />
         )}
         {(driver.city || driver.state) && (
           <InfoCard
@@ -371,7 +371,7 @@ export default function DriverDetailPage() {
       </div>
 
       {/* Danger Zone */}
-      {userId !== user?.userId && (
+      {driverId !== user?.userId && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-6">
           <h2 className="mb-2 flex items-center gap-2 text-base font-semibold text-red-700">
             <AlertTriangle className="h-5 w-5" />
@@ -383,7 +383,7 @@ export default function DriverDetailPage() {
           </p>
           <button
             onClick={() => setDeleting(true)}
-            disabled={deleting}
+            disabled={deleteLoading}
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
@@ -403,13 +403,13 @@ export default function DriverDetailPage() {
       <ConfirmationModal
         isOpen={deleting}
         title="Excluir conta"
-        description={`Tem certeza que deseja excluir a conta de ${driver.fullName}? Esta ação é irreversível.`}
+        description={`Tem certeza que deseja excluir a conta de ${driver.name}? Esta ação é irreversível.`}
         onConfirm={handleDelete}
         onCancel={() => {
           setDeleting(false)
           setDeleteError(undefined)
         }}
-        loading={deleting}
+        loading={deleteLoading}
         error={deleteError}
       />
     </div>
