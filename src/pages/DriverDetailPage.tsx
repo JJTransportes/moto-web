@@ -210,13 +210,13 @@ export default function DriverDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Voltar
         </button>
-        <UserAvatar photoUrl={photoUrl} fullName={driver.fullName} size="lg" />
-        <h1 className="text-2xl font-bold text-gray-800">{driver.fullName}</h1>
+        <UserAvatar photoUrl={photoUrl} fullName={driver.name} size="lg" />
+        <h1 className="text-2xl font-bold text-gray-800">{driver.name}</h1>
         {driver.isActive !== undefined && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${driver.isActive
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
               }`}
           >
             {driver.isActive ? (
@@ -234,7 +234,7 @@ export default function DriverDetailPage() {
         <InfoCard
           icon={<User className="h-4 w-4 text-blue-500" />}
           label="Nome completo"
-          value={driver.fullName}
+          value={driver.name}
         />
         <InfoCard
           icon={<Mail className="h-4 w-4 text-blue-500" />}
@@ -257,9 +257,6 @@ export default function DriverDetailPage() {
             label="Nível de acesso"
             value={driver.access === 'Admin' ? 'Administrador' : 'Usuário'}
           />
-        )}
-        {driver.department && (
-          <InfoCard label="Departamento" value={driver.department} />
         )}
         {(driver.city || driver.state) && (
           <InfoCard
@@ -406,7 +403,7 @@ export default function DriverDetailPage() {
       <ConfirmationModal
         isOpen={deleting}
         title="Excluir conta"
-        description={`Tem certeza que deseja excluir a conta de ${driver.fullName}? Esta ação é irreversível.`}
+        description={`Tem certeza que deseja excluir a conta de ${driver.name}? Esta ação é irreversível.`}
         onConfirm={handleDelete}
         onCancel={() => {
           setDeleting(false)

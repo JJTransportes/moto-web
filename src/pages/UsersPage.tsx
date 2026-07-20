@@ -349,7 +349,7 @@ export default function UsersPage() {
                           onClick={() => {
                             const navigateId =
                               role === 'drivers'
-                                ? (item as DriverListItem).driverId
+                                ? (item as DriverListItem).userId
                                 : (item as PassengerListItem).passengerId
                             navigate(`/users/${role}/${navigateId}`)
                           }}

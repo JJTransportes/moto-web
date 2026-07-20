@@ -9,12 +9,12 @@ export interface VehicleInfo {
 }
 
 export interface DriverProfile {
-  driverId: string
-  fullName: string
+  id: string
+  name: string
   email: string
+  phone: string | null
   cpf: string | null
   cnh: string | null
-  department: string | null
   vehicle: VehicleInfo | null
 
   // Enhanced fields

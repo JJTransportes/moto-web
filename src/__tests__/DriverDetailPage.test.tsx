@@ -25,12 +25,12 @@ const mockedChangeVehicle = vi.mocked(changeDriverVehicle)
 const mockedFetchVehicles = vi.mocked(fetchAvailableVehicles)
 
 const driverData = {
-  driverId: 'driver-1',
-  fullName: 'João Motorista',
+  id: 'driver-1',
+  name: 'João Motorista',
   email: 'joao@example.com',
+  phone: null,
   cpf: '52998224725',
   cnh: '12345678900',
-  department: 'Transporte',
   vehicle: {
     vehicleId: 'v-001',
     brand: 'Toyota',
@@ -62,7 +62,7 @@ function renderPage(userId = 'driver-user-1') {
     <MemoryRouter initialEntries={[`/users/drivers/${userId}`]}>
       <AuthProvider>
         <Routes>
-          <Route path="/users/drivers/:userId" element={<DriverDetailPage />} />
+          <Route path="/users/drivers/:driverId" element={<DriverDetailPage />} />
           <Route path="/users" element={<div>Users Page</div>} />
         </Routes>
       </AuthProvider>
