@@ -35,7 +35,7 @@ const emptyForm: FormValues = {
   countryCode: 'BR',
 }
 
-type FieldErrors = Partial<FormValues & { departments: string; categoryIds: string }>
+type FieldErrors = Partial<Omit<FormValues, 'categoryIds'> & { departments: string; categoryIds: string }>
 
 export default function PartitionCreationPage() {
   const { token } = useAuth()
@@ -65,7 +65,7 @@ export default function PartitionCreationPage() {
     })
   }, [token])
 
-  const set = (field: keyof FormValues) => (value: string) =>
+  const set = (field: Exclude<keyof FormValues, 'categoryIds'>) => (value: string) =>
     setForm(f => ({ ...f, [field]: value }))
 
   function handleAddDepartment() {
