@@ -36,8 +36,8 @@ describe('PartitionListPage', () => {
     mockedList.mockResolvedValueOnce({
       ok: true,
       data: [
-        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte', categoryId: 'cat-1', categoryTitle: 'Transporte' },
-        { partitionId: 'pid-2', name: 'SEMED', identifier: 'SEMED-001', acronym: 'SEMED', departments: 'Educação', categoryId: 'cat-2', categoryTitle: 'Educação' },
+        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte', categoryIds: ['cat-1'], categoryTitles: ['Transporte'] },
+        { partitionId: 'pid-2', name: 'SEMED', identifier: 'SEMED-001', acronym: 'SEMED', departments: 'Educação', categoryIds: ['cat-2'], categoryTitles: ['Educação'] },
       ],
     })
     renderPage()
@@ -49,7 +49,7 @@ describe('PartitionListPage', () => {
     mockedList.mockResolvedValueOnce({
       ok: true,
       data: [
-        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte', categoryId: 'cat-1', categoryTitle: 'Transporte' },
+        { partitionId: 'pid-1', name: 'SMTT', identifier: 'SMTT-001', acronym: 'SMTT', departments: 'Transporte', categoryIds: ['cat-1'], categoryTitles: ['Transporte'] },
       ],
     })
     renderPage()
@@ -78,7 +78,7 @@ describe('PartitionListPage', () => {
 
   it('hides "Nova Unidade" link for Admin (not GlobalAdmin)', async () => {
     mockedList.mockResolvedValueOnce({ ok: true, data: [] })
-    renderPage('GlobalAdmin')
+    renderPage('Admin')
     await waitFor(() => screen.getByText(/Nenhuma unidade/))
     expect(screen.queryByRole('link', { name: /Nova Unidade/ })).not.toBeInTheDocument()
   })

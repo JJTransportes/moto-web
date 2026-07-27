@@ -101,8 +101,8 @@ export default function Sidebar() {
         )}
 
         {isGlobalAdmin && (
-          <SidebarSection label="Unidades">
-            <SidebarNavLink to="/partitions" label="Unidades Públicas" icon={Building2} />
+          <SidebarSection label="Secretarias">
+            <SidebarNavLink to="/partitions" label="Secretarias" icon={Building2} />
           </SidebarSection>
         )}
 

@@ -13,8 +13,8 @@ export interface CreateCategoryInput {
 }
 
 export interface CategoryDetail extends CategorySummary {
-  partitionId: string | null
-  partitionName: string | null
+  partitionIds: string[]
+  partitionNames: string[]
   createdAt: string
   updatedAt: string
 }

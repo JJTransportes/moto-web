@@ -18,7 +18,7 @@ const mockedListPartitions = vi.mocked(listPartitions)
 const mockedFetchPartitionDepartments = vi.mocked(fetchPartitionDepartments)
 
 const STUB_PARTITIONS = [
-  { partitionId: 'part-1', name: 'Secretaria de TI', identifier: 'STI', acronym: 'STI', departments: 'TI', categoryId: 'cat-1', categoryTitle: 'TI' },
+  { partitionId: 'part-1', name: 'Secretaria de TI', identifier: 'STI', acronym: 'STI', departments: 'TI', categoryIds: ['cat-1'], categoryTitles: ['TI'] },
 ]
 
 const STUB_DEPARTMENTS = [

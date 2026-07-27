@@ -94,8 +94,10 @@ export default function PartitionDetailPage() {
               <dd className="font-medium text-gray-900">{partition.departments}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Categoria</dt>
-              <dd className="font-medium text-gray-900">{partition.categoryTitle ?? '—'}</dd>
+              <dt className="text-gray-500">Categorias</dt>
+              <dd className="font-medium text-gray-900">
+                {partition.categoryTitles.length > 0 ? partition.categoryTitles.join(', ') : '—'}
+              </dd>
             </div>
           </dl>
         </div>

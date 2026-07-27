@@ -46,15 +46,15 @@ export default function PartitionEditPage() {
   const navigate = useNavigate()
 
   const [form, setForm] = useState<FormValues | null>(null)
-  const [currentCategoryId, setCurrentCategoryId] = useState<string | null>(null)
-  const [currentCategoryTitle, setCurrentCategoryTitle] = useState<string | null>(null)
+  const [currentCategoryIds, setCurrentCategoryIds] = useState<string[]>([])
+  const [currentCategoryTitles, setCurrentCategoryTitles] = useState<string[]>([])
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState(false)
   const [serverError, _] = useState<string | undefined>()
 
   const [categories, setCategories] = useState<CategorySummary[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(false)
-  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
 
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
@@ -69,9 +69,9 @@ export default function PartitionEditPage() {
     getPartition(token, partitionId).then(result => {
       if (!result.ok) { setLoadError(true); return }
       setForm(toFormValues(result.data))
-      setCurrentCategoryId(result.data.categoryId)
-      setCurrentCategoryTitle(result.data.categoryTitle)
-      setSelectedCategoryId(result.data.categoryId ?? '')
+      setCurrentCategoryIds(result.data.categoryIds)
+      setCurrentCategoryTitles(result.data.categoryTitles)
+      setSelectedCategoryIds(result.data.categoryIds)
     })
   }, [token, partitionId])
 
@@ -135,14 +135,14 @@ export default function PartitionEditPage() {
     setSaveLoading(true)
     setSaveError(undefined)
 
-    const categoryId = isGlobalAdmin && selectedCategoryId ? selectedCategoryId : (currentCategoryId ?? '')
+    const categoryIds = isGlobalAdmin ? selectedCategoryIds : currentCategoryIds
 
     const result = await updatePartition(token, partitionId, {
       name: form.name,
       identifier: form.identifier,
       acronym: form.acronym,
       departments: form.departments.split(',').map(d => d.trim()).filter(Boolean),
-      categoryId,
+      categoryIds,
       adminCode,
       address: {
         lineOne: form.lineOne,
@@ -178,10 +178,14 @@ export default function PartitionEditPage() {
     void adminCode
   }
 
-  const categorySelectOptions = categories.map(c => ({
-    value: c.categoryId,
-    label: c.title,
-  }))
+  function toggleCategory(categoryId: string) {
+    if (!isGlobalAdmin) return
+    setSelectedCategoryIds(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    )
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -211,35 +215,46 @@ export default function PartitionEditPage() {
               <FormField id="departments" label="Departamentos" value={form.departments} onChange={set('departments')} error={errors.departments} placeholder="Adicione um novo departamento" />
             </div>
 
-            {/* Categoria field */}
+            {/* Categorias field */}
             <div className="col-span-2">
               {isGlobalAdmin ? (
                 <>
                   <div className="mb-2">
-                    <span className="text-sm font-medium text-gray-700">Categoria atual:</span>
+                    <span className="text-sm font-medium text-gray-700">Categorias atuais:</span>
                     <span className="ml-2 text-sm text-gray-500">
-                      {categories.find(c => c.categoryId === currentCategoryId)?.title ?? currentCategoryId ?? '—'}
+                      {currentCategoryTitles.length > 0 ? currentCategoryTitles.join(', ') : '—'}
                     </span>
                   </div>
-                  <FormField
-                    id="categoryId"
-                    type="select"
-                    label="Alterar categoria"
-                    value={selectedCategoryId}
-                    onChange={setSelectedCategoryId}
-                    disabled={categoriesLoading}
-                    options={categoriesLoading ? [{ value: '', label: 'Carregando...' }] : [
-                      { value: currentCategoryId ?? '', label: 'Manter categoria atual' },
-                      ...categorySelectOptions.filter(c => c.value !== currentCategoryId),
-                    ]}
-                  />
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Alterar categorias</label>
+                  {categoriesLoading ? (
+                    <p className="text-sm text-gray-400">Carregando categorias...</p>
+                  ) : categories.length === 0 ? (
+                    <p className="text-sm text-gray-400">Nenhuma categoria disponível.</p>
+                  ) : (
+                    <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-gray-300 p-3">
+                      {categories.map(c => {
+                        const checked = selectedCategoryIds.includes(c.categoryId)
+                        return (
+                          <label key={c.categoryId} className="flex items-center gap-2 cursor-pointer py-1">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleCategory(c.categoryId)}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{c.title}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div>
-                    <span className="text-sm font-medium text-gray-700">Categoria:</span>
-                    <span className="ml-2 text-sm text-gray-500">
-                      {currentCategoryTitle ?? currentCategoryId ?? '—'}
-                    </span>
+                  <span className="text-sm font-medium text-gray-700">Categorias:</span>
+                  <span className="ml-2 text-sm text-gray-500">
+                    {currentCategoryTitles.length > 0 ? currentCategoryTitles.join(', ') : '—'}
+                  </span>
                 </div>
               )}
             </div>

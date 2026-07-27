@@ -11,7 +11,7 @@ interface FormValues {
   name: string
   identifier: string
   acronym: string
-  categoryId: string
+  categoryIds: string[]
   lineOne: string
   lineTwo: string
   district: string
@@ -25,7 +25,7 @@ const emptyForm: FormValues = {
   name: '',
   identifier: '',
   acronym: '',
-  categoryId: '',
+  categoryIds: [],
   lineOne: '',
   lineTwo: '',
   district: '',
@@ -35,7 +35,7 @@ const emptyForm: FormValues = {
   countryCode: 'BR',
 }
 
-type FieldErrors = Partial<FormValues & { departments: string }>
+type FieldErrors = Partial<FormValues & { departments: string; categoryIds: string }>
 
 export default function PartitionCreationPage() {
   const { token } = useAuth()
@@ -89,7 +89,9 @@ export default function PartitionCreationPage() {
     e.name = validateRequired(form.name, 'Nome')
     e.identifier = validateRequired(form.identifier, 'Identificador')
     e.acronym = validateRequired(form.acronym, 'Sigla')
-    e.categoryId = validateRequired(form.categoryId, 'Categoria')
+    if (form.categoryIds.length === 0) {
+      e.categoryIds = 'Selecione pelo menos uma categoria.'
+    }
     e.lineOne = validateRequired(form.lineOne, 'Logradouro')
     e.city = validateRequired(form.city, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
@@ -116,7 +118,7 @@ export default function PartitionCreationPage() {
       identifier: form.identifier,
       acronym: form.acronym,
       departments: departmentList,
-      categoryId: form.categoryId,
+      categoryIds: form.categoryIds,
       adminCode,
       address: {
         lineOne: form.lineOne,
@@ -137,11 +139,6 @@ export default function PartitionCreationPage() {
       setModalError(result.message)
     }
   }
-
-  const categoryOptions = categories.map(c => ({
-    value: c.categoryId,
-    label: c.title,
-  }))
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -203,16 +200,38 @@ export default function PartitionCreationPage() {
               )}
             </div>
             <div className="col-span-2">
-              <FormField
-                id="categoryId"
-                type="select"
-                label="Categoria"
-                value={form.categoryId}
-                onChange={set('categoryId')}
-                error={errors.categoryId}
-                disabled={categoriesLoading}
-                options={categoriesLoading ? [{ value: '', label: 'Carregando...' }] : categoryOptions}
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Categorias</label>
+              {categoriesLoading ? (
+                <p className="text-sm text-gray-400">Carregando categorias...</p>
+              ) : categories.length === 0 ? (
+                <p className="text-sm text-gray-400">Nenhuma categoria disponível.</p>
+              ) : (
+                <div className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-gray-300 p-3">
+                  {categories.map(c => {
+                    const checked = form.categoryIds.includes(c.categoryId)
+                    return (
+                      <label key={c.categoryId} className="flex items-center gap-2 cursor-pointer py-1">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            if (checked) {
+                              setForm(f => ({ ...f, categoryIds: f.categoryIds.filter(id => id !== c.categoryId) }))
+                            } else {
+                              setForm(f => ({ ...f, categoryIds: [...f.categoryIds, c.categoryId] }))
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{c.title}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+              {errors.categoryIds && (
+                <p className="mt-1 text-xs text-red-500" role="alert">{errors.categoryIds}</p>
+              )}
             </div>
           </div>
         </div>

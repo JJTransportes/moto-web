@@ -72,8 +72,8 @@ export default function PartitionListPage() {
               <div>
                 <p className="font-semibold text-gray-900">{p.name}</p>
                 <p className="text-sm text-gray-500">{p.identifier} · {p.acronym}</p>
-                {p.categoryTitle && (
-                  <p className="text-xs text-blue-600 mt-0.5">{p.categoryTitle}</p>
+                {p.categoryTitles.length > 0 && (
+                  <p className="text-xs text-blue-600 mt-0.5">{p.categoryTitles.join(', ')}</p>
                 )}
               </div>
               <span className="text-xs text-gray-400 truncate max-w-xs">{p.departments}</span>

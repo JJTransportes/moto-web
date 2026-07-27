@@ -6,8 +6,8 @@ export interface PublicPartition {
   identifier: string
   acronym: string
   departments: string
-  categoryId: string | null
-  categoryTitle: string | null
+  categoryIds: string[]
+  categoryTitles: string[]
 }
 
 export interface PublicPartitionAddress {
@@ -33,8 +33,8 @@ export interface PublicPartitionDetail {
   acronym: string
   departments: string
   departmentList: DepartmentItem[]
-  categoryId: string | null
-  categoryTitle: string | null
+  categoryIds: string[]
+  categoryTitles: string[]
   address: PublicPartitionAddress
 }
 
@@ -43,7 +43,7 @@ export interface CreatePartitionInput {
   identifier: string
   acronym: string
   departments: string[]
-  categoryId: string
+  categoryIds: string[]
   adminCode: string
   address: {
     lineOne: string
@@ -61,7 +61,7 @@ export interface UpdatePartitionInput {
   identifier: string
   acronym: string
   departments: string[]
-  categoryId: string
+  categoryIds: string[]
   adminCode: string
   address: {
     lineOne: string

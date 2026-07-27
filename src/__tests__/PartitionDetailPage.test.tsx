@@ -18,8 +18,8 @@ const DETAIL = {
   acronym: 'SMTT',
   departments: 'Transporte',
   departmentList: [],
-  categoryId: null,
-  categoryTitle: null,
+  categoryIds: [] as string[],
+  categoryTitles: [] as string[],
   address: {
     addressId: 'addr-1',
     lineOne: 'Rua A, 1',
@@ -65,15 +65,15 @@ describe('PartitionDetailPage', () => {
     expect(screen.getByText('BR')).toBeInTheDocument()
   })
 
-  it('shows "—" when categoryTitle is null', async () => {
+  it('shows "—" when no categories are assigned', async () => {
     mockedGet.mockResolvedValueOnce({ ok: true, data: DETAIL })
     renderPage()
     await waitFor(() => screen.getAllByText('SMTT'))
     expect(screen.getByText('—')).toBeInTheDocument()
   })
 
-  it('shows categoryTitle when present', async () => {
-    mockedGet.mockResolvedValueOnce({ ok: true, data: { ...DETAIL, categoryTitle: 'Categoria A' } })
+  it('shows categoryTitles when present', async () => {
+    mockedGet.mockResolvedValueOnce({ ok: true, data: { ...DETAIL, categoryTitles: ['Categoria A'] } })
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
   })
