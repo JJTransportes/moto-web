@@ -28,8 +28,8 @@ const DETAIL = {
   acronym: 'SMTT',
   departments: 'Transporte',
   departmentList: [],
-  categoryId: 'cat-current',
-  categoryTitle: 'Categoria Atual',
+  categoryIds: ['cat-current'],
+  categoryTitles: ['Categoria Atual'],
   address: {
     addressId: 'addr-1',
     lineOne: 'Rua A, 1',
@@ -72,14 +72,14 @@ afterEach(() => {
 
 describe('PartitionEditPage', () => {
   describe('GlobalAdmin', () => {
-    it('shows current category name and a reassignment dropdown', async () => {
+    it('shows current category name and category checkboxes', async () => {
       mockedGet.mockResolvedValueOnce({ ok: true, data: DETAIL })
       mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
       renderPage()
       await waitFor(() => screen.getByText('Editar Unidade Pública'))
-      expect(screen.getByText(/Categoria atual:/)).toBeInTheDocument()
-      expect(screen.getByText('Categoria Atual')).toBeInTheDocument()
-      expect(screen.getByLabelText('Alterar categoria')).toBeInTheDocument()
+      expect(screen.getByText(/Categorias atuais:/)).toBeInTheDocument()
+      expect(screen.getAllByText('Categoria Atual').length).toBeGreaterThanOrEqual(1)
+      expect(screen.getByText('Alterar categorias')).toBeInTheDocument()
     })
 
     it('opens confirmation modal on save click', async () => {
@@ -92,13 +92,18 @@ describe('PartitionEditPage', () => {
       expect(mockedUpdate).not.toHaveBeenCalled()
     })
 
-    it('sends categoryId and adminCode on modal confirm with reassignment', async () => {
+    it('sends categoryIds and adminCode on modal confirm with reassignment', async () => {
       mockedGet.mockResolvedValueOnce({ ok: true, data: DETAIL })
       mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
-      mockedUpdate.mockResolvedValueOnce({ ok: true, data: { ...DETAIL, categoryId: 'cat-2', categoryTitle: 'Categoria B' } })
+      mockedUpdate.mockResolvedValueOnce({ ok: true, data: { ...DETAIL, categoryIds: ['cat-2'], categoryTitles: ['Categoria B'] } })
       renderPage()
       await waitFor(() => screen.getByText('Editar Unidade Pública'))
-      fireEvent.change(screen.getByLabelText('Alterar categoria'), { target: { value: 'cat-2' } })
+      // Uncheck current, check 'cat-2' — toggling checkboxes
+      const checkboxes = screen.getAllByRole('checkbox')
+      // First checkbox is 'cat-current' (checked by default) — uncheck it
+      fireEvent.click(checkboxes[0])
+      // Second checkbox is 'cat-1' — skip. Third checkbox is 'cat-2' — check it
+      fireEvent.click(checkboxes[2])
       fireEvent.click(screen.getByText('Salvar Alterações'))
       await waitFor(() => screen.getByRole('dialog'))
 
@@ -107,7 +112,7 @@ describe('PartitionEditPage', () => {
 
       await waitFor(() => expect(mockedUpdate).toHaveBeenCalledTimes(1))
       expect(mockedUpdate).toHaveBeenCalledWith('valid-token', 'pid-1', expect.objectContaining({
-        categoryId: 'cat-2',
+        categoryIds: ['cat-2'],
         adminCode: 'my-code',
       }))
     })
@@ -122,21 +127,21 @@ describe('PartitionEditPage', () => {
   })
 
   describe('non-GlobalAdmin', () => {
-    it('does not show reassignment dropdown', async () => {
+    it('does not show category checkboxes', async () => {
       mockedGet.mockResolvedValueOnce({ ok: true, data: DETAIL })
       mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
       renderPage(['Admin'])
       await waitFor(() => screen.getByText('Editar Unidade Pública'))
-      expect(screen.queryByLabelText('Alterar categoria')).toBeNull()
+      expect(screen.queryByText('Alterar categorias')).toBeNull()
     })
 
-    it('shows current category as read-only label', async () => {
+    it('shows current categories as read-only label', async () => {
       mockedGet.mockResolvedValueOnce({ ok: true, data: DETAIL })
       mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
       renderPage(['Admin'])
       await waitFor(() => screen.getByText('Editar Unidade Pública'))
-      expect(screen.getByText(/Categoria:/)).toBeInTheDocument()
-      expect(screen.getByText('Categoria Atual')).toBeInTheDocument()
+      expect(screen.getByText(/Categorias:/)).toBeInTheDocument()
+      expect(screen.getAllByText('Categoria Atual').length).toBeGreaterThanOrEqual(1)
     })
 
     it('does not show delete button', async () => {

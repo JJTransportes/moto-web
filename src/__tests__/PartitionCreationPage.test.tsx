@@ -43,7 +43,7 @@ function fillRequiredFields() {
   fireEvent.change(screen.getByLabelText('Sigla'), { target: { value: 'SMTT' } })
 
   // Add a department
-  const deptInput = screen.getByPlaceholderText('Nome da secretaria')
+  const deptInput = screen.getByPlaceholderText('Nome do departamento')
   fireEvent.change(deptInput, { target: { value: 'Transporte' } })
   fireEvent.click(screen.getByText('Adicionar'))
 
@@ -67,14 +67,14 @@ describe('PartitionCreationPage', () => {
     })
   })
 
-  it('blocks submission and shows error when category is not selected', async () => {
+  it('blocks submission and shows error when no categories are selected', async () => {
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
     fillRequiredFields()
-    // Do not select a category
+    // Do not select any category checkboxes
     fireEvent.click(screen.getByText('Criar Unidade'))
-    await waitFor(() => expect(screen.getByText(/Categoria é obrigatório/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Selecione pelo menos uma categoria/i)).toBeInTheDocument())
     expect(mockedCreate).not.toHaveBeenCalled()
   })
 
@@ -83,13 +83,15 @@ describe('PartitionCreationPage', () => {
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
     fillRequiredFields()
-    fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'cat-1' } })
+    // Check the first category checkbox
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[0])
     fireEvent.click(screen.getByText('Criar Unidade'))
     await waitFor(() => expect(screen.getByRole('dialog')).toBeInTheDocument())
     expect(mockedCreate).not.toHaveBeenCalled()
   })
 
-  it('calls createPartition with categoryId and adminCode on modal confirm', async () => {
+  it('calls createPartition with categoryIds and adminCode on modal confirm', async () => {
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
     mockedCreate.mockResolvedValueOnce({
       ok: true,
@@ -100,8 +102,8 @@ describe('PartitionCreationPage', () => {
         acronym: 'SMTT',
         departments: 'Transporte',
         departmentList: [],
-        categoryId: 'cat-1',
-        categoryTitle: 'Categoria A',
+        categoryIds: ['cat-1'],
+        categoryTitles: ['Categoria A'],
         address: {
           addressId: 'addr-1',
           lineOne: 'Rua A, 1',
@@ -117,7 +119,9 @@ describe('PartitionCreationPage', () => {
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
     fillRequiredFields()
-    fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'cat-1' } })
+    // Check the first category checkbox
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[0])
     fireEvent.click(screen.getByText('Criar Unidade'))
     await waitFor(() => screen.getByRole('dialog'))
 
@@ -126,7 +130,7 @@ describe('PartitionCreationPage', () => {
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1))
     const [, input] = mockedCreate.mock.calls[0]
-    expect(input.categoryId).toBe('cat-1')
+    expect(input.categoryIds).toEqual(['cat-1'])
     expect(input.adminCode).toBe('my-code')
   })
 
@@ -144,13 +148,14 @@ describe('PartitionCreationPage', () => {
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
     fillRequiredFields()
-    fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'cat-1' } })
+    const checkboxes = screen.getAllByRole('checkbox')
+    fireEvent.click(checkboxes[0])
     fireEvent.click(screen.getByText('Criar Unidade'))
     await waitFor(() => screen.getByRole('dialog'))
 
     fireEvent.change(screen.getByLabelText('Código do administrador'), { target: { value: 'my-code' } })
     fireEvent.click(screen.getByRole('button', { name: /Confirmar/i }))
 
-    await waitFor(() => expect(screen.getByText(/Erro ao criar unidade/)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Erro ao criar unidade. Tente novamente./)).toBeInTheDocument())
   })
 })

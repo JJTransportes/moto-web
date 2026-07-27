@@ -22,8 +22,8 @@ const SUMMARY = {
   identifier: 'SMTT-001',
   acronym: 'SMTT',
   departments: 'Transporte',
-  categoryId: 'cat-1',
-  categoryTitle: 'Transporte',
+  categoryIds: ['cat-1'],
+  categoryTitles: ['Transporte'],
 }
 
 const DETAIL = {
@@ -96,7 +96,7 @@ describe('publicPartitionApi', () => {
       identifier: 'SMTT-001',
       acronym: 'SMTT',
       departments: ['Transporte'],
-      categoryId: 'cat-1',
+      categoryIds: ['cat-1'],
       adminCode: 'ADMIN-001',
       adminId: 'admin-uuid',
       address: { lineOne: 'Rua A, 1', city: 'Maceió', state: 'AL', countryCode: 'BR' },
@@ -137,7 +137,7 @@ describe('publicPartitionApi', () => {
       identifier: 'ID-002',
       acronym: 'UPD',
       departments: ['Sec'],
-      categoryId: 'cat-1',
+      categoryIds: ['cat-1'],
       adminCode: 'ADMIN-001',
       adminId: null,
       address: { lineOne: 'Rua B, 2', city: 'Arapiraca', state: 'AL', countryCode: 'BR' },
