@@ -118,7 +118,8 @@ export async function fetchProtected<T>(
       },
     })
     if (res.ok) {
-      const data = (await res.json()) as T
+      const text = await res.text()
+      const data = text ? (JSON.parse(text) as T) : (undefined as unknown as T)
       return { ok: true, data }
     }
     return { ok: false, status: res.status }
