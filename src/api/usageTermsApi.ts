@@ -1,5 +1,43 @@
 import { fetchProtected } from './authApi'
 
+const BASE_URL = import.meta.env.VITE_API_URL ?? ''
+
+export interface PublicSubTerm {
+  subTermId: string
+  title: string
+  content: string
+  sortOrder: number
+}
+
+export interface PublicUsageTerm {
+  usageTermId: string
+  title: string
+  subTerms: PublicSubTerm[]
+}
+
+export type GetPublicActiveUsageTermResult =
+  | { ok: true; data: PublicUsageTerm }
+  | { ok: false; status: number; message: string }
+
+export async function getPublicActiveUsageTerm(): Promise<GetPublicActiveUsageTermResult> {
+  try {
+    const res = await fetch(`${BASE_URL}/api/usage-terms/public/active`)
+
+    if (res.ok) {
+      const data = (await res.json()) as PublicUsageTerm
+      return { ok: true, data }
+    }
+
+    const message =
+      res.status === 404
+        ? 'Nenhum termo de uso disponível no momento.'
+        : 'Erro ao carregar termos de uso. Tente novamente.'
+    return { ok: false, status: res.status, message }
+  } catch {
+    return { ok: false, status: 0, message: 'Erro de conexão. Tente novamente.' }
+  }
+}
+
 export interface SubTerm {
   subTermId: string
   title: string

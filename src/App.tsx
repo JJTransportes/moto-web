@@ -23,6 +23,7 @@ import SettingsPage from './pages/SettingsPage'
 import TravelDetailPage from './pages/TravelDetailPage'
 import TravelListPage from './pages/TravelListPage'
 import UsageTermsPage from './pages/UsageTermsPage'
+import PublicUsageTermsPage from './pages/PublicUsageTermsPage'
 import UsersPage from './pages/UsersPage'
 
 function ForbiddenPage() {
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<PasswordResetPage />} />
             <Route path="/forbidden" element={<ForbiddenPage />} />
+            <Route path="/terms" element={<PublicUsageTermsPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<DashboardPage />} />
