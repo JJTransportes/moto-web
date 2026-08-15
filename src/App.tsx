@@ -46,7 +46,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<PasswordResetPage />} />
             <Route path="/forbidden" element={<ForbiddenPage />} />
-            <Route path="/terms" element={<PublicUsageTermsPage />} />
+            <Route path="/terms-privacy" element={<PublicUsageTermsPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<DashboardPage />} />
