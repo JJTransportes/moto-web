@@ -89,6 +89,7 @@ export default function PublicUsageTermsPage() {
       {/* Header */}
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-3xl px-6 py-8 sm:py-12">
+          <h1 className="pb-6 text-3xl font-semibold">Termos de Uso</h1>
           <div className="flex items-center gap-3">
             <FileText className="h-7 w-7 text-blue-600 flex-shrink-0" />
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
