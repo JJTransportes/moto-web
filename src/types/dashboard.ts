@@ -1,7 +1,12 @@
 export interface StatsResponse {
   totalTravelsToday: number
   totalWaitingTravels: number
+  /**
+   * Motoristas em modo de atendimento (driver_activities.status='active'
+   * com ativação nas últimas 4h) — não mais presença de conexão no hub.
+   */
   driversOnline: number
+  /** Demais motoristas (fora de atendimento). */
   driversOffline: number
 }
 

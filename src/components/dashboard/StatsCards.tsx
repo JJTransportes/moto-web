@@ -54,7 +54,8 @@ export default function StatsCards({ stats }: StatsCardsProps) {
       <StatsCard
         icon={<UsersIcon />}
         label="Motoristas"
-        value={`${stats.driversOnline} Online / ${stats.driversOffline} Offline`}
+        value={`${stats.driversOnline} / ${stats.driversOffline}`}
+        subtitle="Em Atendimento / Fora de Atendimento"
         accentColor="green"
       />
     </div>
