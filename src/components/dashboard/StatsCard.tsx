@@ -4,6 +4,7 @@ interface StatsCardProps {
   icon: ReactNode
   label: string
   value: string | number
+  subtitle?: string
   accentColor: 'blue' | 'amber' | 'green'
 }
 
@@ -19,7 +20,7 @@ const iconColorMap: Record<string, string> = {
   green: 'text-green-500',
 }
 
-export default function StatsCard({ icon, label, value, accentColor }: StatsCardProps) {
+export default function StatsCard({ icon, label, value, subtitle, accentColor }: StatsCardProps) {
   return (
     <div
       className={`rounded-lg border-l-4 ${accentMap[accentColor]} bg-white p-5 shadow-sm`}
@@ -29,6 +30,7 @@ export default function StatsCard({ icon, label, value, accentColor }: StatsCard
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-gray-500">{label}</p>
           <p className="text-2xl font-bold text-gray-900">{value}</p>
+          {subtitle && <p className="text-xs text-gray-500">{subtitle}</p>}
         </div>
       </div>
     </div>

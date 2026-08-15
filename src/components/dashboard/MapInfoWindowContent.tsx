@@ -25,7 +25,7 @@ export default function MapInfoWindowContent({ type, data }: MapInfoWindowConten
       <div className="min-w-[200px] p-1">
         <p className="font-semibold text-slate-800">{user.fullName}</p>
         <p className="text-sm text-slate-500">
-          {user.role === 'Driver' ? 'Motorista' : 'Passageiro'}
+          {user.role === 'Driver' ? 'Motorista em atendimento' : 'Passageiro'}
         </p>
         <p className="text-xs text-slate-400 mt-1">
           {formatTimeAgo(user.lastUpdated)}

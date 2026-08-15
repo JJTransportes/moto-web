@@ -200,7 +200,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
                 <p className="text-slate-600 font-medium">
                   {activeFilter === 'travels'
                     ? 'Nenhuma viagem registrada hoje'
-                    : 'Nenhum usuário online no momento'}
+                    : 'Nenhum usuário ativo no momento'}
                 </p>
               </div>
             </div>
