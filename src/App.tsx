@@ -25,6 +25,7 @@ import TravelListPage from './pages/TravelListPage'
 import UsageTermsPage from './pages/UsageTermsPage'
 import PublicUsageTermsPage from './pages/PublicUsageTermsPage'
 import UsersPage from './pages/UsersPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 
 function ForbiddenPage() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/reset-password" element={<PasswordResetPage />} />
             <Route path="/forbidden" element={<ForbiddenPage />} />
             <Route path="/terms-privacy" element={<PublicUsageTermsPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<DashboardPage />} />
