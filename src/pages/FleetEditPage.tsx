@@ -4,7 +4,8 @@ import { useAuth } from '../auth/AuthContext'
 import { listCategories, type CategorySummary } from '../api/categoryApi'
 import { fetchVehicle, updateVehicle, type Vehicle } from '../api/vehicleApi'
 import FormField from '../components/FormField'
-import { validateRequired } from '../utils/validators'
+import { validateMaxLength, validateRequired } from '../utils/validators'
+import { maskPlate, validatePlate } from '../utils/masks'
 
 interface FormValues {
   brand: string
@@ -87,8 +88,8 @@ export default function FleetEditPage() {
   function validate(): boolean {
     if (!form) return false
     const e: FieldErrors = {}
-    e.brand = validateRequired(form.brand, 'Marca')
-    e.model = validateRequired(form.model, 'Modelo')
+    e.brand = validateRequired(form.brand, 'Marca') ?? validateMaxLength(form.brand, 20, 'Marca')
+    e.model = validateRequired(form.model, 'Modelo') ?? validateMaxLength(form.model, 20, 'Modelo')
     if (!form.year.trim()) {
       e.year = 'Ano é obrigatório.'
     } else {
@@ -97,7 +98,7 @@ export default function FleetEditPage() {
         e.year = 'Ano inválido.'
       }
     }
-    e.plate = validateRequired(form.plate, 'Placa')
+    e.plate = validatePlate(form.plate)
     e.categoryId = validateRequired(form.categoryId, 'Categoria')
     setErrors(e)
     return Object.values(e).every(v => !v)
@@ -130,6 +131,8 @@ export default function FleetEditPage() {
     label: c.title,
   }))
 
+  const isFormComplete = Object.values(form).every(v => v.trim() !== '')
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
@@ -150,6 +153,7 @@ export default function FleetEditPage() {
               onChange={set('brand')}
               error={errors.brand}
               placeholder="Ex: Toyota"
+              softMaxLength={20}
             />
             <FormField
               id="model"
@@ -158,6 +162,7 @@ export default function FleetEditPage() {
               onChange={set('model')}
               error={errors.model}
               placeholder="Ex: Corolla"
+              softMaxLength={20}
             />
             <FormField
               id="year"
@@ -166,6 +171,8 @@ export default function FleetEditPage() {
               onChange={set('year')}
               error={errors.year}
               placeholder="Ex: 2024"
+              maxLength={4}
+              digitsOnly
             />
             <FormField
               id="plate"
@@ -174,6 +181,8 @@ export default function FleetEditPage() {
               onChange={set('plate')}
               error={errors.plate}
               placeholder="Ex: ABC1D23"
+              maxLength={7}
+              mask={maskPlate}
             />
             <div className="col-span-2">
               <FormField
@@ -205,7 +214,7 @@ export default function FleetEditPage() {
           </Link>
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !isFormComplete}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {submitting ? 'Salvando...' : 'Salvar Alterações'}
