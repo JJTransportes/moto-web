@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
   const [mapFilter, setMapFilter] = useState<FilterType>('all')
 
-  const handleViewChange = (view: '' | 'map') => {
+  const handleViewChange = (view: 'stats' | 'map') => {
     if (view === 'map') {
       setSearchParams({ view: 'map' })
     } else {
