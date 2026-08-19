@@ -154,7 +154,6 @@ export interface CreateDriverRequest {
   cnh: string
   birthdate: string
   address: AddressCommand
-  department: string
   email: string
   initialPassword: string
   adminCode: string

@@ -38,18 +38,18 @@ function renderPage() {
 }
 
 function fillRequiredFields() {
-  fireEvent.change(screen.getByLabelText('Nome*'), { target: { value: 'SMTT' } })
-  fireEvent.change(screen.getByLabelText('Identificador*'), { target: { value: 'SMTT-001' } })
-  fireEvent.change(screen.getByLabelText('Sigla*'), { target: { value: 'SMTT' } })
+  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'SMTT' } })
+  fireEvent.change(screen.getByLabelText('Identificador'), { target: { value: 'SMTT-001' } })
+  fireEvent.change(screen.getByLabelText('Sigla'), { target: { value: 'SMTT' } })
 
   // Add a department
   const deptInput = screen.getByPlaceholderText('Nome do departamento')
   fireEvent.change(deptInput, { target: { value: 'Transporte' } })
   fireEvent.click(screen.getByText('Adicionar'))
 
-  fireEvent.change(screen.getByLabelText('Logradouro*'), { target: { value: 'Rua A, 1' } })
-  fireEvent.change(screen.getByLabelText('Cidade*'), { target: { value: 'Maceió' } })
-  fireEvent.change(screen.getByLabelText('Estado*'), { target: { value: 'AL' } })
+  fireEvent.change(screen.getByLabelText('Logradouro'), { target: { value: 'Rua A, 1' } })
+  fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'Maceió' } })
+  fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'AL' } })
 }
 
 afterEach(() => {

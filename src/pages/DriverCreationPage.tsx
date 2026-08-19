@@ -27,7 +27,6 @@ interface FormValues {
   address: string
   city: string
   state: string
-  department: string
   vehicleId: string
   email: string
   initialPassword: string
@@ -43,7 +42,6 @@ const emptyForm: FormValues = {
   address: '',
   city: '',
   state: '',
-  department: '',
   vehicleId: '',
   email: '',
   initialPassword: '',
@@ -59,7 +57,6 @@ interface FormErrors {
   address?: string
   city?: string
   state?: string
-  department?: string
   vehicleId?: string
   email?: string
   initialPassword?: string
@@ -149,7 +146,6 @@ export default function DriverCreationPage() {
         state: form.state,
         countryCode: 'BR',
       },
-      department: '',
       vehicleId: form.vehicleId,
       email: form.email,
       initialPassword: form.initialPassword,

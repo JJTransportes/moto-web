@@ -183,6 +183,7 @@ export default function FleetEditPage() {
             <FormField
               id="plate"
               label="Placa"
+              required
               value={form.plate}
               onChange={set('plate')}
               error={errors.plate}
@@ -195,6 +196,7 @@ export default function FleetEditPage() {
                 id="categoryId"
                 type="select"
                 label="Categoria"
+                required
                 value={form.categoryId}
                 onChange={set('categoryId')}
                 error={errors.categoryId}
