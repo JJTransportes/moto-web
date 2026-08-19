@@ -98,7 +98,10 @@ export default function FleetCreationPage() {
     label: c.title,
   }))
 
-  const isFormComplete = Object.values(form).every(v => v.trim() !== '')
+  const isFormComplete =
+    Object.values(form).every(v => v.trim() !== '') &&
+    form.brand.length <= 20 &&
+    form.model.length <= 20
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -121,7 +124,7 @@ export default function FleetCreationPage() {
           <div className="grid grid-cols-2 gap-4">
             <FormField
               id="brand"
-              label="Marca"
+              label="Marca*"
               value={form.brand}
               onChange={set('brand')}
               error={errors.brand}
@@ -130,7 +133,7 @@ export default function FleetCreationPage() {
             />
             <FormField
               id="model"
-              label="Modelo"
+              label="Modelo*"
               value={form.model}
               onChange={set('model')}
               error={errors.model}
@@ -139,7 +142,7 @@ export default function FleetCreationPage() {
             />
             <FormField
               id="year"
-              label="Ano"
+              label="Ano*"
               value={form.year}
               onChange={set('year')}
               error={errors.year}
@@ -149,7 +152,7 @@ export default function FleetCreationPage() {
             />
             <FormField
               id="plate"
-              label="Placa"
+              label="Placa*"
               value={form.plate}
               onChange={set('plate')}
               error={errors.plate}
@@ -161,7 +164,7 @@ export default function FleetCreationPage() {
               <FormField
                 id="categoryId"
                 type="select"
-                label="Categoria"
+                label="Categoria*"
                 value={form.categoryId}
                 onChange={set('categoryId')}
                 error={errors.categoryId}

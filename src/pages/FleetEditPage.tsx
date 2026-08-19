@@ -131,7 +131,10 @@ export default function FleetEditPage() {
     label: c.title,
   }))
 
-  const isFormComplete = Object.values(form).every(v => v.trim() !== '')
+  const isFormComplete =
+    Object.values(form).every(v => v.trim() !== '') &&
+    form.brand.length <= 20 &&
+    form.model.length <= 20
 
   return (
     <div className="mx-auto max-w-2xl">

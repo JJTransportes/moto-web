@@ -6,13 +6,16 @@ import FormField from '../components/FormField'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
 import {
   validateBirthdate,
+  validateCnh,
   validateCpf,
   validateEmail,
   validateFullName,
+  validateMaxLength,
   validatePassword,
   validateRequired,
   validateRg
 } from '../utils/validators'
+import { maskCnh, maskCpf, maskRg, maskUf } from '../utils/masks'
 
 interface FormValues {
   fullName: string
@@ -87,21 +90,41 @@ export default function DriverCreationPage() {
 
   function validate(): boolean {
     const e: FormErrors = {}
-    e.fullName = validateFullName(form.fullName)
+    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo')
     e.cpf = validateCpf(form.cpf)
-    e.rg = validateRg(form.rg)
-    e.registration = validateRequired(form.registration, 'Matrícula')
-    e.cnh = validateRequired(form.cnh, 'CNH')
+    e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
+    e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
+    e.cnh = validateRequired(form.cnh, 'CNH') ?? validateCnh(form.cnh)
     e.birthdate = validateBirthdate(form.birthdate)
-    e.address = validateRequired(form.address, 'Endereço')
-    e.city = validateRequired(form.city, 'Cidade')
+    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço')
+    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
     e.vehicleId = validateRequired(form.vehicleId, 'Veículo')
-    e.email = validateEmail(form.email)
+    e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
     e.initialPassword = validatePassword(form.initialPassword)
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
+
+  const isFormComplete =
+    form.fullName.trim() !== '' &&
+    form.fullName.length <= 100 &&
+    form.cpf.trim() !== '' &&
+    form.rg.trim() !== '' &&
+    form.rg.length <= 20 &&
+    form.registration.trim() !== '' &&
+    form.registration.length <= 30 &&
+    form.cnh.trim() !== '' &&
+    form.birthdate.trim() !== '' &&
+    form.address.trim() !== '' &&
+    form.address.length <= 120 &&
+    form.city.trim() !== '' &&
+    form.city.length <= 60 &&
+    form.state.trim() !== '' &&
+    form.vehicleId.trim() !== '' &&
+    form.email.trim() !== '' &&
+    form.email.length <= 100 &&
+    form.initialPassword.trim() !== ''
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -176,13 +199,13 @@ export default function DriverCreationPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Dados pessoais</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <FormField id="fullName" label="Nome completo" value={form.fullName} onChange={set('fullName')} error={errors.fullName} placeholder="Nome completo" />
+              <FormField id="fullName" label="Nome completo" required value={form.fullName} onChange={set('fullName')} error={errors.fullName} placeholder="Nome completo" softMaxLength={100} />
             </div>
-            <FormField id="cpf" label="CPF" value={form.cpf} onChange={set('cpf')} error={errors.cpf} placeholder="000.000.000-00" />
-            <FormField id="rg" label="RG" value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="RG" />
-            <FormField id="registration" label="Matrícula" value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" />
-            <FormField id="cnh" label="CNH" value={form.cnh} onChange={set('cnh')} error={errors.cnh} placeholder="CNH" />
-            <FormField id="birthdate" label="Data de nascimento" type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
+            <FormField id="cpf" label="CPF" required value={form.cpf} onChange={set('cpf')} error={errors.cpf} placeholder="000.000.000-00" maxLength={14} mask={maskCpf} />
+            <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="00.000.000-0" maxLength={12} mask={maskRg} />
+            <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
+            <FormField id="cnh" label="CNH" required value={form.cnh} onChange={set('cnh')} error={errors.cnh} placeholder="CNH" maxLength={11} mask={maskCnh} digitsOnly />
+            <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
           </div>
         </div>
 
@@ -190,10 +213,10 @@ export default function DriverCreationPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <FormField id="address" label="Endereço" value={form.address} onChange={set('address')} error={errors.address} placeholder="Endereço completo" />
+              <FormField id="address" label="Endereço" required value={form.address} onChange={set('address')} error={errors.address} placeholder="Endereço completo" softMaxLength={120} />
             </div>
-            <FormField id="city" label="Cidade" value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" />
-            <FormField id="state" label="Estado" value={form.state} onChange={set('state')} error={errors.state} placeholder="Estado" />
+            <FormField id="city" label="Cidade" required value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" softMaxLength={60} />
+            <FormField id="state" label="Estado" required value={form.state} onChange={set('state')} error={errors.state} placeholder="UF" maxLength={2} mask={maskUf} />
           </div>
         </div>
 
@@ -212,6 +235,7 @@ export default function DriverCreationPage() {
               <FormField
                 id="vehicleId"
                 label="Selecione o veículo"
+                required
                 type="select"
                 value={form.vehicleId}
                 onChange={set('vehicleId')}
@@ -228,14 +252,14 @@ export default function DriverCreationPage() {
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-gray-700">Credenciais de acesso</h2>
           <div className="grid grid-cols-1 gap-4">
-            <FormField id="email" label="E-mail" type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="email@exemplo.com" />
-            <FormField id="initialPassword" label="Senha inicial" type="password" value={form.initialPassword} onChange={set('initialPassword')} error={errors.initialPassword} placeholder="Senha inicial" />
+            <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="email@exemplo.com" softMaxLength={100} />
+            <FormField id="initialPassword" label="Senha inicial" required type="password" value={form.initialPassword} onChange={set('initialPassword')} error={errors.initialPassword} placeholder="Senha inicial" />
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={vehicles.length === 0}
+          disabled={vehicles.length === 0 || !isFormComplete}
           className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Criar Motorista

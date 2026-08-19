@@ -158,10 +158,10 @@ describe('PartitionEditPage', () => {
       mockedGet.mockResolvedValueOnce({ ok: true, data: DETAIL })
       mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
       renderPage(['GlobalAdmin'])
-      await waitFor(() => screen.getByLabelText('Nome'))
-      expect((screen.getByLabelText('Nome') as HTMLInputElement).value).toBe('SMTT')
-      expect((screen.getByLabelText('Logradouro') as HTMLInputElement).value).toBe('Rua A, 1')
-      expect((screen.getByLabelText('Cidade') as HTMLInputElement).value).toBe('Maceió')
+      await waitFor(() => screen.getByLabelText('Nome*'))
+      expect((screen.getByLabelText('Nome*') as HTMLInputElement).value).toBe('SMTT')
+      expect((screen.getByLabelText('Logradouro*') as HTMLInputElement).value).toBe('Rua A, 1')
+      expect((screen.getByLabelText('Cidade*') as HTMLInputElement).value).toBe('Maceió')
     })
 
     it('shows error message on load failure', async () => {

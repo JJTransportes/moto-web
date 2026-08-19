@@ -16,6 +16,7 @@ interface FormFieldProps {
   disabled?: boolean
   options?: SelectOption[]
   label?: string
+  required?: boolean
   maxLength?: number
   /** Soft limit: doesn't block typing, only shows a warning once exceeded. */
   softMaxLength?: number
@@ -34,6 +35,7 @@ export default function FormField({
   disabled,
   options,
   label,
+  required,
   maxLength,
   softMaxLength,
   digitsOnly,
@@ -73,9 +75,10 @@ export default function FormField({
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={id} className="text-sm font-medium text-gray-700">
-          {label}
-        </label>
+        <span className="text-sm font-medium text-gray-700">
+          <label htmlFor={id}>{label}</label>
+          {required && <span className="text-red-500" aria-hidden="true"> *</span>}
+        </span>
       )}
       {type === 'select' ? (
         <select

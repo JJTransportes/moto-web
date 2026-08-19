@@ -38,18 +38,18 @@ function renderPage() {
 }
 
 function fillRequiredFields() {
-  fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'SMTT' } })
-  fireEvent.change(screen.getByLabelText('Identificador'), { target: { value: 'SMTT-001' } })
-  fireEvent.change(screen.getByLabelText('Sigla'), { target: { value: 'SMTT' } })
+  fireEvent.change(screen.getByLabelText('Nome*'), { target: { value: 'SMTT' } })
+  fireEvent.change(screen.getByLabelText('Identificador*'), { target: { value: 'SMTT-001' } })
+  fireEvent.change(screen.getByLabelText('Sigla*'), { target: { value: 'SMTT' } })
 
   // Add a department
   const deptInput = screen.getByPlaceholderText('Nome do departamento')
   fireEvent.change(deptInput, { target: { value: 'Transporte' } })
   fireEvent.click(screen.getByText('Adicionar'))
 
-  fireEvent.change(screen.getByLabelText('Logradouro'), { target: { value: 'Rua A, 1' } })
-  fireEvent.change(screen.getByLabelText('Cidade'), { target: { value: 'Maceió' } })
-  fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'AL' } })
+  fireEvent.change(screen.getByLabelText('Logradouro*'), { target: { value: 'Rua A, 1' } })
+  fireEvent.change(screen.getByLabelText('Cidade*'), { target: { value: 'Maceió' } })
+  fireEvent.change(screen.getByLabelText('Estado*'), { target: { value: 'AL' } })
 }
 
 afterEach(() => {
@@ -67,14 +67,13 @@ describe('PartitionCreationPage', () => {
     })
   })
 
-  it('blocks submission and shows error when no categories are selected', async () => {
+  it('keeps submission blocked when no categories are selected', async () => {
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
     fillRequiredFields()
     // Do not select any category checkboxes
-    fireEvent.click(screen.getByText('Criar Unidade'))
-    await waitFor(() => expect(screen.getByText(/Selecione pelo menos uma categoria/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Criar Unidade')).toBeDisabled())
     expect(mockedCreate).not.toHaveBeenCalled()
   })
 

@@ -5,7 +5,8 @@ import { createPartition } from '../api/publicPartitionApi'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
-import { validateRequired } from '../utils/validators'
+import { validateMaxLength, validateRequired } from '../utils/validators'
+import { maskCep, maskCountryCode, maskUf } from '../utils/masks'
 
 interface FormValues {
   name: string
@@ -68,7 +69,18 @@ export default function PartitionCreationPage() {
   const set = (field: Exclude<keyof FormValues, 'categoryIds'>) => (value: string) =>
     setForm(f => ({ ...f, [field]: value }))
 
+  const isAddDepartmentEnabled =
+    form.name.trim() !== '' &&
+    form.name.length <= 100 &&
+    form.identifier.trim() !== '' &&
+    form.identifier.length <= 30 &&
+    form.acronym.trim() !== '' &&
+    form.acronym.length <= 10 &&
+    departmentInput.trim() !== '' &&
+    departmentInput.length <= 100
+
   function handleAddDepartment() {
+    if (!isAddDepartmentEnabled) return
     const trimmed = departmentInput.trim()
     if (!trimmed) return
     if (departmentList.some(d => d.toLowerCase() === trimmed.toLowerCase())) {
@@ -86,14 +98,16 @@ export default function PartitionCreationPage() {
 
   function validate(): boolean {
     const e: FieldErrors = {}
-    e.name = validateRequired(form.name, 'Nome')
-    e.identifier = validateRequired(form.identifier, 'Identificador')
-    e.acronym = validateRequired(form.acronym, 'Sigla')
+    e.name = validateRequired(form.name, 'Nome') ?? validateMaxLength(form.name, 100, 'Nome')
+    e.identifier = validateRequired(form.identifier, 'Identificador') ?? validateMaxLength(form.identifier, 30, 'Identificador')
+    e.acronym = validateRequired(form.acronym, 'Sigla') ?? validateMaxLength(form.acronym, 10, 'Sigla')
     if (form.categoryIds.length === 0) {
       e.categoryIds = 'Selecione pelo menos uma categoria.'
     }
-    e.lineOne = validateRequired(form.lineOne, 'Logradouro')
-    e.city = validateRequired(form.city, 'Cidade')
+    e.lineOne = validateRequired(form.lineOne, 'Logradouro') ?? validateMaxLength(form.lineOne, 120, 'Logradouro')
+    e.lineTwo = validateMaxLength(form.lineTwo, 60, 'Complemento')
+    e.district = validateMaxLength(form.district, 60, 'Bairro')
+    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
     e.countryCode = validateRequired(form.countryCode, 'País')
     if (departmentList.length === 0) {
@@ -102,6 +116,24 @@ export default function PartitionCreationPage() {
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
+
+  const isFormComplete =
+    form.name.trim() !== '' &&
+    form.name.length <= 100 &&
+    form.identifier.trim() !== '' &&
+    form.identifier.length <= 30 &&
+    form.acronym.trim() !== '' &&
+    form.acronym.length <= 10 &&
+    form.categoryIds.length > 0 &&
+    form.lineOne.trim() !== '' &&
+    form.lineOne.length <= 120 &&
+    form.lineTwo.length <= 60 &&
+    form.district.length <= 60 &&
+    form.city.trim() !== '' &&
+    form.city.length <= 60 &&
+    form.state.trim() !== '' &&
+    form.countryCode.trim() !== '' &&
+    departmentList.length > 0
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -155,12 +187,12 @@ export default function PartitionCreationPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Informações gerais</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <FormField id="name" label="Nome" value={form.name} onChange={set('name')} error={errors.name} placeholder="Nome da unidade" />
+              <FormField id="name" label="Nome*" value={form.name} onChange={set('name')} error={errors.name} placeholder="Nome da unidade" softMaxLength={100} />
             </div>
-            <FormField id="identifier" label="Identificador" value={form.identifier} onChange={set('identifier')} error={errors.identifier} placeholder="Ex: SMTT" />
-            <FormField id="acronym" label="Sigla" value={form.acronym} onChange={set('acronym')} error={errors.acronym} placeholder="Ex: SMTT" />
+            <FormField id="identifier" label="Identificador*" value={form.identifier} onChange={set('identifier')} error={errors.identifier} placeholder="Ex: SMTT" softMaxLength={30} />
+            <FormField id="acronym" label="Sigla*" value={form.acronym} onChange={set('acronym')} error={errors.acronym} placeholder="Ex: SMTT" softMaxLength={10} />
             <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Departamentos</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Departamentos*</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -168,12 +200,14 @@ export default function PartitionCreationPage() {
                   onChange={e => setDepartmentInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddDepartment() } }}
                   placeholder="Nome do departamento"
+                  maxLength={100}
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleAddDepartment}
-                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                  disabled={!isAddDepartmentEnabled}
+                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Adicionar
                 </button>
@@ -182,7 +216,7 @@ export default function PartitionCreationPage() {
                 <p className="mt-1 text-sm text-red-500">{errors.departments}</p>
               )}
               {departmentList.length > 0 && (
-                <ul className="mt-2 space-y-1">
+                <ul className="mt-2 max-h-[170px] space-y-1 overflow-y-auto">
                   {departmentList.map((dept, i) => (
                     <li key={i} className="flex items-center justify-between rounded bg-gray-50 px-3 py-1.5 text-sm text-gray-700">
                       <span>{dept}</span>
@@ -200,7 +234,7 @@ export default function PartitionCreationPage() {
               )}
             </div>
             <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Categorias</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Categorias*</label>
               {categoriesLoading ? (
                 <p className="text-sm text-gray-400">Carregando categorias...</p>
               ) : categories.length === 0 ? (
@@ -240,16 +274,16 @@ export default function PartitionCreationPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <FormField id="lineOne" label="Logradouro" value={form.lineOne} onChange={set('lineOne')} error={errors.lineOne} placeholder="Rua, número" />
+              <FormField id="lineOne" label="Logradouro*" value={form.lineOne} onChange={set('lineOne')} error={errors.lineOne} placeholder="Rua, número" softMaxLength={120} />
             </div>
             <div className="col-span-2">
-              <FormField id="lineTwo" label="Complemento (opcional)" value={form.lineTwo} onChange={set('lineTwo')} placeholder="Apto, sala..." />
+              <FormField id="lineTwo" label="Complemento (opcional)" value={form.lineTwo} onChange={set('lineTwo')} error={errors.lineTwo} placeholder="Apto, sala..." softMaxLength={60} />
             </div>
-            <FormField id="district" label="Bairro (opcional)" value={form.district} onChange={set('district')} placeholder="Bairro" />
-            <FormField id="city" label="Cidade" value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" />
-            <FormField id="state" label="Estado" value={form.state} onChange={set('state')} error={errors.state} placeholder="UF" />
-            <FormField id="postalCode" label="CEP (opcional)" value={form.postalCode} onChange={set('postalCode')} placeholder="00000-000" />
-            <FormField id="countryCode" label="País" value={form.countryCode} onChange={set('countryCode')} error={errors.countryCode} placeholder="BR" />
+            <FormField id="district" label="Bairro (opcional)" value={form.district} onChange={set('district')} error={errors.district} placeholder="Bairro" softMaxLength={60} />
+            <FormField id="city" label="Cidade*" value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" softMaxLength={60} />
+            <FormField id="state" label="Estado*" value={form.state} onChange={set('state')} error={errors.state} placeholder="UF" maxLength={2} mask={maskUf} />
+            <FormField id="postalCode" label="CEP (opcional)" value={form.postalCode} onChange={set('postalCode')} placeholder="00000-000" maxLength={9} mask={maskCep} />
+            <FormField id="countryCode" label="País*" value={form.countryCode} onChange={set('countryCode')} error={errors.countryCode} placeholder="BR" maxLength={2} mask={maskCountryCode} />
           </div>
         </div>
 
@@ -264,7 +298,7 @@ export default function PartitionCreationPage() {
           </button>
           <button
             type="submit"
-            disabled={categoriesError}
+            disabled={categoriesError || !isFormComplete}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             Criar Unidade
