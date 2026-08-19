@@ -265,12 +265,12 @@ export default function PartitionEditPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Informações gerais</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <FormField id="name" label="Nome*" value={form.name} onChange={set('name')} error={errors.name} placeholder="Nome da unidade" softMaxLength={100} />
+              <FormField id="name" label="Nome" required value={form.name} onChange={set('name')} error={errors.name} placeholder="Nome da unidade" softMaxLength={100} />
             </div>
-            <FormField id="identifier" label="Identificador*" value={form.identifier} onChange={set('identifier')} error={errors.identifier} placeholder="Ex: SMTT" softMaxLength={30} />
-            <FormField id="acronym" label="Sigla*" value={form.acronym} onChange={set('acronym')} error={errors.acronym} placeholder="Ex: SMTT" softMaxLength={10} />
+            <FormField id="identifier" label="Identificador" required value={form.identifier} onChange={set('identifier')} error={errors.identifier} placeholder="Ex: SMTT" softMaxLength={30} />
+            <FormField id="acronym" label="Sigla" required value={form.acronym} onChange={set('acronym')} error={errors.acronym} placeholder="Ex: SMTT" softMaxLength={10} />
             <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Departamentos*</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Departamentos<span className="text-red-500" aria-hidden="true"> *</span></label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -365,16 +365,16 @@ export default function PartitionEditPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Endereço</h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <FormField id="lineOne" label="Logradouro*" value={form.lineOne} onChange={set('lineOne')} error={errors.lineOne} placeholder="Rua, número" softMaxLength={120} />
+              <FormField id="lineOne" label="Logradouro" required value={form.lineOne} onChange={set('lineOne')} error={errors.lineOne} placeholder="Rua, número" softMaxLength={120} />
             </div>
             <div className="col-span-2">
               <FormField id="lineTwo" label="Complemento (opcional)" value={form.lineTwo} onChange={set('lineTwo')} error={errors.lineTwo} placeholder="Apto, sala..." softMaxLength={60} />
             </div>
             <FormField id="district" label="Bairro (opcional)" value={form.district} onChange={set('district')} error={errors.district} placeholder="Bairro" softMaxLength={60} />
-            <FormField id="city" label="Cidade*" value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" softMaxLength={60} />
-            <FormField id="state" label="Estado*" value={form.state} onChange={set('state')} error={errors.state} placeholder="UF" maxLength={2} mask={maskUf} />
+            <FormField id="city" label="Cidade" required value={form.city} onChange={set('city')} error={errors.city} placeholder="Cidade" softMaxLength={60} />
+            <FormField id="state" label="Estado" required value={form.state} onChange={set('state')} error={errors.state} placeholder="UF" maxLength={2} mask={maskUf} />
             <FormField id="postalCode" label="CEP (opcional)" value={form.postalCode} onChange={set('postalCode')} placeholder="00000-000" maxLength={9} mask={maskCep} />
-            <FormField id="countryCode" label="País*" value={form.countryCode} onChange={set('countryCode')} error={errors.countryCode} placeholder="BR" maxLength={2} mask={maskCountryCode} />
+            <FormField id="countryCode" label="País" required value={form.countryCode} onChange={set('countryCode')} error={errors.countryCode} placeholder="BR" maxLength={2} mask={maskCountryCode} />
           </div>
         </div>
 

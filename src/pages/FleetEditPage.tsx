@@ -152,6 +152,7 @@ export default function FleetEditPage() {
             <FormField
               id="brand"
               label="Marca"
+              required
               value={form.brand}
               onChange={set('brand')}
               error={errors.brand}
@@ -161,6 +162,7 @@ export default function FleetEditPage() {
             <FormField
               id="model"
               label="Modelo"
+              required
               value={form.model}
               onChange={set('model')}
               error={errors.model}
@@ -170,6 +172,7 @@ export default function FleetEditPage() {
             <FormField
               id="year"
               label="Ano"
+              required
               value={form.year}
               onChange={set('year')}
               error={errors.year}

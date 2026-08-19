@@ -124,7 +124,8 @@ export default function FleetCreationPage() {
           <div className="grid grid-cols-2 gap-4">
             <FormField
               id="brand"
-              label="Marca*"
+              label="Marca"
+              required
               value={form.brand}
               onChange={set('brand')}
               error={errors.brand}
@@ -133,7 +134,8 @@ export default function FleetCreationPage() {
             />
             <FormField
               id="model"
-              label="Modelo*"
+              label="Modelo"
+              required
               value={form.model}
               onChange={set('model')}
               error={errors.model}
@@ -142,7 +144,8 @@ export default function FleetCreationPage() {
             />
             <FormField
               id="year"
-              label="Ano*"
+              label="Ano"
+              required
               value={form.year}
               onChange={set('year')}
               error={errors.year}
@@ -152,7 +155,8 @@ export default function FleetCreationPage() {
             />
             <FormField
               id="plate"
-              label="Placa*"
+              label="Placa"
+              required
               value={form.plate}
               onChange={set('plate')}
               error={errors.plate}
@@ -164,7 +168,8 @@ export default function FleetCreationPage() {
               <FormField
                 id="categoryId"
                 type="select"
-                label="Categoria*"
+                label="Categoria"
+                required
                 value={form.categoryId}
                 onChange={set('categoryId')}
                 error={errors.categoryId}
