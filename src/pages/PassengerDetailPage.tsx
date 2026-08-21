@@ -7,14 +7,18 @@ import {
   Hash,
   Mail,
   MapPin,
+  Pencil,
+  Power,
   ShieldCheck,
   ShieldX,
   Trash2,
   User,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
+  activateUserAccount,
+  deactivateUserAccount,
   deleteUserAccount,
   fetchPassengerProfile,
   fetchUserProfilePhoto,
@@ -22,7 +26,10 @@ import {
 } from '../api/userApi'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
+import SuccessModal from '../components/SuccessModal'
+import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
+import { maskCpf, maskRg } from '../utils/masks'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -55,6 +62,12 @@ export default function PassengerDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | undefined>()
+  const [deleteSuccess, setDeleteSuccess] = useState(false)
+
+  // Activate/deactivate state
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const loadPassenger = useCallback(async () => {
@@ -96,28 +109,39 @@ export default function PassengerDetailPage() {
   }, [successMessage])
 
   const handleDelete = useCallback(async (adminCode: string) => {
-    if (!token || !passengerId) return
+    if (!token || !passenger) return
     setDeleteLoading(true)
     setDeleteError(undefined)
 
-    const result = await deleteUserAccount(token, passengerId, adminCode)
+    const result = await deleteUserAccount(token, passenger.userId, adminCode)
+    setDeleteLoading(false)
 
     if (result.ok) {
       setDeleting(false)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
-      setSuccessMessage('Conta excluída com sucesso.')
-      await loadPassenger()
-    } else if (result.status === 401) {
-      setDeleteError(result.message)
-      setDeleteLoading(false)
+      setDeleteSuccess(true)
     } else {
-      setDeleting(false)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
-      setSuccessMessage(result.message)
+      setDeleteError(result.message)
     }
-  }, [token, passengerId, loadPassenger])
+  }, [token, passenger])
+
+  const handleToggleStatus = useCallback(async (adminCode: string) => {
+    if (!token || !passenger) return
+    setStatusLoading(true)
+    setStatusError(undefined)
+
+    const result = passenger.isActive
+      ? await deactivateUserAccount(token, passenger.userId, adminCode)
+      : await activateUserAccount(token, passenger.userId, adminCode)
+    setStatusLoading(false)
+
+    if (result.ok) {
+      setStatusModalOpen(false)
+      setSuccessMessage(passenger.isActive ? 'Passageiro inativado com sucesso.' : 'Passageiro ativado com sucesso.')
+      await loadPassenger()
+    } else {
+      setStatusError(result.message)
+    }
+  }, [token, passenger, loadPassenger])
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString('pt-BR', {
@@ -197,6 +221,28 @@ export default function PassengerDetailPage() {
           )}
           {passenger.isActive ? 'Ativo' : 'Inativo'}
         </span>
+        <div className="ml-auto flex items-center gap-2">
+          {passengerId !== user?.userId && (
+            <button
+              onClick={() => setStatusModalOpen(true)}
+              disabled={statusLoading}
+              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${passenger.isActive
+                ? 'border-yellow-300 bg-white text-yellow-700 hover:bg-yellow-50'
+                : 'border-green-300 bg-white text-green-700 hover:bg-green-50'
+                }`}
+            >
+              <Power className="h-4 w-4" />
+              {passenger.isActive ? 'Inativar' : 'Ativar'}
+            </button>
+          )}
+          <Link
+            to={`/users/passengers/${passengerId}/edit`}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar
+          </Link>
+        </div>
       </div>
 
       {/* Info Cards Grid */}
@@ -214,12 +260,12 @@ export default function PassengerDetailPage() {
         <InfoCard
           icon={<Hash className="h-4 w-4 text-blue-500" />}
           label="CPF"
-          value={passenger.cpf}
+          value={maskCpf(passenger.cpf)}
         />
         <InfoCard
           icon={<Hash className="h-4 w-4 text-blue-500" />}
           label="RG"
-          value={passenger.rg}
+          value={maskRg(passenger.rg)}
         />
         <InfoCard
           icon={<Hash className="h-4 w-4 text-blue-500" />}
@@ -361,8 +407,8 @@ export default function PassengerDetailPage() {
             Zona de Perigo
           </h2>
           <p className="mb-4 text-sm text-red-600">
-            Excluir esta conta irá desativá-la permanentemente. O passageiro não poderá mais
-            acessar o sistema ou realizar solicitações.
+            Excluir esta conta é permanente e não pode ser desfeito. O passageiro perderá o acesso
+            ao sistema para sempre e não será possível reativar essa conta pela interface.
           </p>
           <button
             onClick={() => setDeleting(true)}
@@ -370,33 +416,55 @@ export default function PassengerDetailPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
-            Excluir conta
+            Excluir conta permanentemente
           </button>
         </div>
       )}
 
-      {/* Success notification */}
       {successMessage && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {successMessage}
-        </div>
+        <Toast message={successMessage} onClose={() => setSuccessMessage(undefined)} />
       )}
 
-      {/* Confirmation Modal */}
-      {passenger && (
-        <ConfirmationModal
-          isOpen={deleting}
-          title="Excluir conta"
-          description={`Tem certeza que deseja excluir a conta de ${passenger.fullName}? Esta ação é irreversível.`}
-          onConfirm={handleDelete}
-          onCancel={() => {
-            setDeleting(false)
-            setDeleteError(undefined)
-          }}
-          loading={deleteLoading}
-          error={deleteError}
-        />
-      )}
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={deleting}
+        title="Excluir conta permanentemente"
+        description={`Esta ação não pode ser desfeita. Digite seu código de administrador para excluir a conta de ${passenger.fullName} permanentemente.`}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setDeleting(false)
+          setDeleteError(undefined)
+        }}
+        loading={deleteLoading}
+        error={deleteError}
+      />
+
+      {/* Delete Success Modal */}
+      <SuccessModal
+        isOpen={deleteSuccess}
+        title="Conta excluída"
+        description={`A conta de ${passenger.fullName} foi excluída permanentemente. Ela não aparecerá mais na lista de usuários.`}
+        buttonLabel="Voltar para Usuários"
+        onConfirm={() => navigate('/users')}
+      />
+
+      {/* Status Toggle Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={statusModalOpen}
+        title={passenger.isActive ? 'Inativar conta' : 'Ativar conta'}
+        description={
+          passenger.isActive
+            ? `Digite seu código de administrador para inativar a conta de ${passenger.fullName}. Você pode reativá-la depois.`
+            : `Digite seu código de administrador para reativar a conta de ${passenger.fullName}.`
+        }
+        onConfirm={handleToggleStatus}
+        onCancel={() => {
+          setStatusModalOpen(false)
+          setStatusError(undefined)
+        }}
+        loading={statusLoading}
+        error={statusError}
+      />
     </div>
   )
 }

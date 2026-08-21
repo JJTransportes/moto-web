@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { listDrivers, listPassengers } from '../api/userListApi'
 import type { DriverListItem, PassengerListItem } from '../api/userListApi'
-import { fetchUserProfilePhoto, deleteUserAccount } from '../api/userApi'
+import { fetchUserProfilePhoto, activateUserAccount, deactivateUserAccount } from '../api/userApi'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
-import { Users, Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
+import { Users, Search, ChevronLeft, ChevronRight, Power } from 'lucide-react'
 
 type Role = 'drivers' | 'passengers'
 type PageStatus = 'loading' | 'loaded' | 'error' | 'empty'
@@ -59,10 +60,10 @@ export default function UsersPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [photoMap, setPhotoMap] = useState<Map<string, string | null>>(new Map())
 
-  // Deletion state
-  const [deletingUser, setDeletingUser] = useState<{ userId: string; fullName: string } | null>(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | undefined>()
+  // Activate/deactivate state
+  const [statusTarget, setStatusTarget] = useState<{ userId: string; fullName: string; isActive: boolean } | null>(null)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -134,29 +135,32 @@ export default function UsersPage() {
     return () => clearTimeout(timer)
   }, [successMessage])
 
-  const handleDelete = useCallback(async (adminCode: string) => {
-    if (!token || !deletingUser) return
-    setDeleteLoading(true)
-    setDeleteError(undefined)
+  const handleToggleStatus = useCallback(async (adminCode: string) => {
+    if (!token || !statusTarget) return
+    setStatusLoading(true)
+    setStatusError(undefined)
 
-    const result = await deleteUserAccount(token, deletingUser.userId, adminCode)
+    const result = statusTarget.isActive
+      ? await deactivateUserAccount(token, statusTarget.userId, adminCode)
+      : await activateUserAccount(token, statusTarget.userId, adminCode)
 
     if (result.ok) {
-      setDeletingUser(null)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
-      setSuccessMessage(`Conta de ${deletingUser.fullName} excluída com sucesso.`)
+      const label = statusTarget.isActive ? 'inativada' : 'ativada'
+      setStatusTarget(null)
+      setStatusLoading(false)
+      setStatusError(undefined)
+      setSuccessMessage(`Conta de ${statusTarget.fullName} ${label} com sucesso.`)
       await fetchData()
     } else if (result.status === 401) {
-      setDeleteError(result.message)
-      setDeleteLoading(false)
+      setStatusError(result.message)
+      setStatusLoading(false)
     } else {
-      setDeletingUser(null)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
+      setStatusTarget(null)
+      setStatusLoading(false)
+      setStatusError(undefined)
       setSuccessMessage(result.message)
     }
-  }, [token, deletingUser, fetchData])
+  }, [token, statusTarget, fetchData])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const isLoading = pageStatus === 'loading'
@@ -358,22 +362,26 @@ export default function UsersPage() {
                         >
                           Selecionar
                         </button>
-                        {item.isActive && item.userId !== user?.userId && (
+                        {item.userId !== user?.userId && (
                           <button
                             onClick={() =>
-                              setDeletingUser({
+                              setStatusTarget({
                                 userId:
                                   role === 'drivers'
                                     ? (item as DriverListItem).userId
                                     : (item as PassengerListItem).userId,
                                 fullName: item.fullName,
+                                isActive: item.isActive,
                               })
                             }
                             disabled={isLoading}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`inline-flex items-center gap-1 rounded-lg border bg-white px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${item.isActive
+                              ? 'border-yellow-300 text-yellow-700 hover:bg-yellow-50'
+                              : 'border-green-300 text-green-700 hover:bg-green-50'
+                              }`}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Excluir
+                            <Power className="h-3.5 w-3.5" />
+                            {item.isActive ? 'Inativar' : 'Ativar'}
                           </button>
                         )}
                       </div>
@@ -413,29 +421,28 @@ export default function UsersPage() {
         </>
       )}
 
-      {/* Success notification */}
       {successMessage && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {successMessage}
-        </div>
+        <Toast message={successMessage} onClose={() => setSuccessMessage(undefined)} />
       )}
 
       {/* Confirmation Modal */}
       <ConfirmationModal
-        isOpen={deletingUser !== null}
-        title="Excluir conta"
+        isOpen={statusTarget !== null}
+        title={statusTarget?.isActive ? 'Inativar conta' : 'Ativar conta'}
         description={
-          deletingUser
-            ? `Tem certeza que deseja excluir a conta de ${deletingUser.fullName}? Esta ação é irreversível.`
+          statusTarget
+            ? statusTarget.isActive
+              ? `Digite seu código de administrador para inativar a conta de ${statusTarget.fullName}. Você pode reativá-la depois.`
+              : `Digite seu código de administrador para reativar a conta de ${statusTarget.fullName}.`
             : ''
         }
-        onConfirm={handleDelete}
+        onConfirm={handleToggleStatus}
         onCancel={() => {
-          setDeletingUser(null)
-          setDeleteError(undefined)
+          setStatusTarget(null)
+          setStatusError(undefined)
         }}
-        loading={deleteLoading}
-        error={deleteError}
+        loading={statusLoading}
+        error={statusError}
       />
     </div>
   )

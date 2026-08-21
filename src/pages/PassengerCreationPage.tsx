@@ -13,8 +13,9 @@ import {
   validateMaxLength,
   validatePassword,
   validateRequired,
+  validateSafeText,
 } from '../utils/validators'
-import { maskCpf, maskRg, maskUf } from '../utils/masks'
+import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg } from '../utils/masks'
 
 interface FormValues {
   fullName: string
@@ -89,13 +90,13 @@ export default function PassengerCreationPage() {
 
   function validate(): boolean {
     const e: Partial<FormValues> = {}
-    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo')
+    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
     e.cpf = validateCpf(form.cpf)
     e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
     e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
     e.birthdate = validateBirthdate(form.birthdate)
-    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço')
-    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade')
+    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
+    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
     e.department = validateRequired(form.department, 'Departamento')
     e.publicPartitionId = validateRequired(form.publicPartitionId, 'Unidade')
@@ -137,8 +138,8 @@ export default function PassengerCreationPage() {
 
     const req: CreatePassengerRequest = {
       fullName: form.fullName,
-      cpf: form.cpf,
-      rg: form.rg,
+      cpf: unmaskCpf(form.cpf),
+      rg: unmaskRg(form.rg),
       registration: form.registration,
       birthdate: form.birthdate,
       address: {

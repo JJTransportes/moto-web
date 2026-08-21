@@ -18,6 +18,7 @@ const mockedFetchProfile = vi.mocked(fetchPassengerProfile)
 
 const passengerData = {
   passengerId: 'passenger-1',
+  userId: 'user-1',
   fullName: 'Maria Passageira',
   email: 'maria@example.com',
   cpf: '52998224725',

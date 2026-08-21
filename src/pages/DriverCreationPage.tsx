@@ -13,9 +13,10 @@ import {
   validateMaxLength,
   validatePassword,
   validateRequired,
-  validateRg
+  validateRg,
+  validateSafeText
 } from '../utils/validators'
-import { maskCnh, maskCpf, maskRg, maskUf } from '../utils/masks'
+import { maskCnh, maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg } from '../utils/masks'
 
 interface FormValues {
   fullName: string
@@ -87,14 +88,14 @@ export default function DriverCreationPage() {
 
   function validate(): boolean {
     const e: FormErrors = {}
-    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo')
+    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
     e.cpf = validateCpf(form.cpf)
     e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
     e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
     e.cnh = validateRequired(form.cnh, 'CNH') ?? validateCnh(form.cnh)
     e.birthdate = validateBirthdate(form.birthdate)
-    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço')
-    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade')
+    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
+    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
     e.vehicleId = validateRequired(form.vehicleId, 'Veículo')
     e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
@@ -135,8 +136,8 @@ export default function DriverCreationPage() {
 
     const req: CreateDriverRequest = {
       fullName: form.fullName,
-      cpf: form.cpf,
-      rg: form.rg,
+      cpf: unmaskCpf(form.cpf),
+      rg: unmaskRg(form.rg),
       registration: form.registration,
       cnh: form.cnh,
       birthdate: form.birthdate,

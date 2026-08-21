@@ -5,7 +5,7 @@ import { createPartition } from '../api/publicPartitionApi'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
-import { validateMaxLength, validateRequired } from '../utils/validators'
+import { validateMaxLength, validateRequired, validateSafeText } from '../utils/validators'
 import { maskCep, maskCountryCode, maskUf } from '../utils/masks'
 
 interface FormValues {
@@ -83,6 +83,10 @@ export default function PartitionCreationPage() {
     if (!isAddDepartmentEnabled) return
     const trimmed = departmentInput.trim()
     if (!trimmed) return
+    if (validateSafeText(trimmed, 'Departamento')) {
+      setErrors(e => ({ ...e, departments: validateSafeText(trimmed, 'Departamento') }))
+      return
+    }
     if (departmentList.some(d => d.toLowerCase() === trimmed.toLowerCase())) {
       setErrors(e => ({ ...e, departments: 'Secretaria já adicionada.' }))
       return
@@ -98,16 +102,16 @@ export default function PartitionCreationPage() {
 
   function validate(): boolean {
     const e: FieldErrors = {}
-    e.name = validateRequired(form.name, 'Nome') ?? validateMaxLength(form.name, 100, 'Nome')
-    e.identifier = validateRequired(form.identifier, 'Identificador') ?? validateMaxLength(form.identifier, 30, 'Identificador')
-    e.acronym = validateRequired(form.acronym, 'Sigla') ?? validateMaxLength(form.acronym, 10, 'Sigla')
+    e.name = validateRequired(form.name, 'Nome') ?? validateMaxLength(form.name, 100, 'Nome') ?? validateSafeText(form.name, 'Nome')
+    e.identifier = validateRequired(form.identifier, 'Identificador') ?? validateMaxLength(form.identifier, 30, 'Identificador') ?? validateSafeText(form.identifier, 'Identificador')
+    e.acronym = validateRequired(form.acronym, 'Sigla') ?? validateMaxLength(form.acronym, 10, 'Sigla') ?? validateSafeText(form.acronym, 'Sigla')
     if (form.categoryIds.length === 0) {
       e.categoryIds = 'Selecione pelo menos uma categoria.'
     }
-    e.lineOne = validateRequired(form.lineOne, 'Logradouro') ?? validateMaxLength(form.lineOne, 120, 'Logradouro')
-    e.lineTwo = validateMaxLength(form.lineTwo, 60, 'Complemento')
-    e.district = validateMaxLength(form.district, 60, 'Bairro')
-    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade')
+    e.lineOne = validateRequired(form.lineOne, 'Logradouro') ?? validateMaxLength(form.lineOne, 120, 'Logradouro') ?? validateSafeText(form.lineOne, 'Logradouro')
+    e.lineTwo = validateMaxLength(form.lineTwo, 60, 'Complemento') ?? validateSafeText(form.lineTwo, 'Complemento')
+    e.district = validateMaxLength(form.district, 60, 'Bairro') ?? validateSafeText(form.district, 'Bairro')
+    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
     e.state = validateRequired(form.state, 'Estado')
     e.countryCode = validateRequired(form.countryCode, 'País')
     if (departmentList.length === 0) {

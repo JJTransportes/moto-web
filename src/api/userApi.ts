@@ -19,6 +19,8 @@ export interface DriverProfile {
 
   // Enhanced fields
   rg?: string | null
+  registration?: string | null
+  address?: AddressCommand | null
   birthdate?: string
   isActive?: boolean
   access?: string
@@ -67,6 +69,7 @@ export interface PassengerDepartmentDto {
 
 export interface PassengerProfile {
   passengerId: string
+  userId: string
   fullName: string
   email: string
   cpf: string
@@ -191,6 +194,82 @@ export const createPassenger = (token: string, body: CreatePassengerRequest) =>
 export const createDriver = (token: string, body: CreateDriverRequest) =>
   createUser('/api/drivers', token, body)
 
+export interface UpdatePassengerRequest {
+  fullName: string
+  cpf: string
+  rg: string
+  registration: string
+  birthdate: string
+  address: AddressCommand
+  adminCode: string
+}
+
+export interface UpdateDriverRequest {
+  fullName: string
+  cpf: string
+  rg: string
+  registration: string
+  cnh: string
+  birthdate: string
+  address: AddressCommand
+  adminCode: string
+  phone?: string | null
+}
+
+export type UpdatePassengerResult =
+  | { ok: true; data: PassengerProfile }
+  | { ok: false; status: number; message: string }
+
+export type UpdateDriverResult =
+  | { ok: true; data: DriverProfile }
+  | { ok: false; status: number; message: string }
+
+export async function updatePassenger(
+  token: string,
+  passengerId: string,
+  body: UpdatePassengerRequest,
+): Promise<UpdatePassengerResult> {
+  const result = await fetchProtected<PassengerProfile>(`/api/passengers/${passengerId}`, token, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    message: result.status === 401
+      ? 'Código do administrador inválido.'
+      : result.status === 409
+        ? 'CPF já cadastrado para outro usuário.'
+        : result.status === 404
+          ? 'Passageiro não encontrado.'
+          : 'Erro ao atualizar passageiro. Verifique os dados e tente novamente.',
+  }
+}
+
+export async function updateDriver(
+  token: string,
+  userId: string,
+  body: UpdateDriverRequest,
+): Promise<UpdateDriverResult> {
+  const result = await fetchProtected<DriverProfile>(`/api/drivers/${userId}`, token, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    message: result.status === 401
+      ? 'Código do administrador inválido.'
+      : result.status === 409
+        ? 'CPF ou CNH já cadastrados para outro usuário.'
+        : result.status === 404
+          ? 'Motorista não encontrado.'
+          : 'Erro ao atualizar motorista. Verifique os dados e tente novamente.',
+  }
+}
+
 export interface UserProfilePhoto {
   photoUrl: string | null
 }
@@ -225,7 +304,8 @@ export async function deleteUserAccount(
   if (result.ok) return { ok: true, data: result.data }
 
   const message =
-    result.status === 400
+    result.apiMessage ??
+    (result.status === 400
       ? 'Você não pode excluir sua própria conta. Solicite que outro administrador realize a exclusão.'
       : result.status === 401
         ? 'Código do administrador inválido.'
@@ -233,10 +313,60 @@ export async function deleteUserAccount(
           ? 'Usuário não encontrado.'
           : result.status === 409
             ? 'Não é possível excluir este usuário. Verifique se a conta está ativa e sem viagens em andamento.'
-            : 'Erro ao excluir usuário. Tente novamente.'
+            : 'Erro ao excluir usuário. Tente novamente.')
 
   return { ok: false, status: result.status, message }
 }
+
+export interface UserStatusChangeResponse {
+  userId: string
+  message: string
+}
+
+export type UserStatusChangeResult =
+  | { ok: true; data: UserStatusChangeResponse }
+  | { ok: false; status: number; message: string }
+
+async function changeUserStatus(
+  token: string,
+  userId: string,
+  action: 'activate' | 'deactivate',
+  adminCode: string,
+): Promise<UserStatusChangeResult> {
+  const result = await fetchProtected<UserStatusChangeResponse>(
+    `/api/users/${userId}/${action}`,
+    token,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ adminCode }),
+    },
+  )
+
+  if (result.ok) return { ok: true, data: result.data }
+
+  const actionLabel = action === 'activate' ? 'ativar' : 'inativar'
+  const message =
+    result.apiMessage ??
+    (result.status === 400
+      ? `Você não pode ${actionLabel} sua própria conta.`
+      : result.status === 401
+        ? 'Código do administrador inválido.'
+        : result.status === 404
+          ? 'Usuário não encontrado.'
+          : result.status === 409
+            ? action === 'activate'
+              ? 'Não é possível reativar: a conta já está ativa ou foi excluída permanentemente.'
+              : 'Esta conta já está inativa.'
+            : `Erro ao ${actionLabel} usuário. Tente novamente.`)
+
+  return { ok: false, status: result.status, message }
+}
+
+export const activateUserAccount = (token: string, userId: string, adminCode: string) =>
+  changeUserStatus(token, userId, 'activate', adminCode)
+
+export const deactivateUserAccount = (token: string, userId: string, adminCode: string) =>
+  changeUserStatus(token, userId, 'deactivate', adminCode)
 
 export async function fetchUserProfilePhoto(
   token: string,

@@ -45,6 +45,15 @@ export function maskRg(value: string): string {
   return out
 }
 
+/** Strips punctuation for API submission — backend expects raw digits (CPF) / raw alphanumeric (RG), no dots/dashes. */
+export function unmaskCpf(value: string): string {
+  return value.replace(/\D/g, '')
+}
+
+export function unmaskRg(value: string): string {
+  return value.toUpperCase().replace(/[^0-9X]/g, '')
+}
+
 export function maskCnh(value: string): string {
   return value.replace(/\D/g, '').slice(0, 11)
 }

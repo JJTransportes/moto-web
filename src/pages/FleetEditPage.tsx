@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import { listCategories, type CategorySummary } from '../api/categoryApi'
 import { fetchVehicle, updateVehicle, type Vehicle } from '../api/vehicleApi'
 import FormField from '../components/FormField'
-import { validateMaxLength, validateRequired } from '../utils/validators'
+import { validateMaxLength, validateRequired, validateSafeText } from '../utils/validators'
 import { maskPlate, validatePlate } from '../utils/masks'
 
 interface FormValues {
@@ -88,8 +88,8 @@ export default function FleetEditPage() {
   function validate(): boolean {
     if (!form) return false
     const e: FieldErrors = {}
-    e.brand = validateRequired(form.brand, 'Marca') ?? validateMaxLength(form.brand, 20, 'Marca')
-    e.model = validateRequired(form.model, 'Modelo') ?? validateMaxLength(form.model, 20, 'Modelo')
+    e.brand = validateRequired(form.brand, 'Marca') ?? validateMaxLength(form.brand, 20, 'Marca') ?? validateSafeText(form.brand, 'Marca')
+    e.model = validateRequired(form.model, 'Modelo') ?? validateMaxLength(form.model, 20, 'Modelo') ?? validateSafeText(form.model, 'Modelo')
     if (!form.year.trim()) {
       e.year = 'Ano é obrigatório.'
     } else {
