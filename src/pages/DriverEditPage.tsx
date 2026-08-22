@@ -16,7 +16,7 @@ import {
   validateRequired,
   validateSafeText,
 } from '../utils/validators'
-import { maskCpf, maskRg, maskCnh, maskUf, unmaskCpf, unmaskRg } from '../utils/masks'
+import { maskCpf, maskRg, maskCnh, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
 
 interface FormValues {
   fullName: string
@@ -142,7 +142,7 @@ export default function DriverEditPage() {
     e.birthdate = validateBirthdate(form.birthdate)
     e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
     e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
-    e.state = validateRequired(form.state, 'Estado')
+    e.state = validateUf(form.state)
     setErrors(e)
     return Object.values(e).every(v => !v)
   }

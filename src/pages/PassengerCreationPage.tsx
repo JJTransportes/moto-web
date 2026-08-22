@@ -15,7 +15,7 @@ import {
   validateRequired,
   validateSafeText,
 } from '../utils/validators'
-import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg } from '../utils/masks'
+import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
 
 interface FormValues {
   fullName: string
@@ -97,7 +97,7 @@ export default function PassengerCreationPage() {
     e.birthdate = validateBirthdate(form.birthdate)
     e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
     e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
-    e.state = validateRequired(form.state, 'Estado')
+    e.state = validateUf(form.state)
     e.department = validateRequired(form.department, 'Departamento')
     e.publicPartitionId = validateRequired(form.publicPartitionId, 'Unidade')
     e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
@@ -124,7 +124,9 @@ export default function PassengerCreationPage() {
     form.publicPartitionId.trim() !== '' &&
     form.email.trim() !== '' &&
     form.email.length <= 100 &&
-    form.initialPassword.trim() !== ''
+    form.initialPassword.trim() !== '' &&
+    form.initialPassword.length >= 8 &&
+    form.initialPassword.length <= 72
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -278,7 +280,7 @@ export default function PassengerCreationPage() {
           <h2 className="mb-4 text-base font-semibold text-gray-700">Credenciais de acesso</h2>
           <div className="grid grid-cols-1 gap-4">
             <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="email@exemplo.com" softMaxLength={100} />
-            <FormField id="initialPassword" label="Senha inicial" required type="password" value={form.initialPassword} onChange={set('initialPassword')} error={errors.initialPassword} placeholder="Senha inicial" />
+            <FormField id="initialPassword" label="Senha inicial" required type="password" value={form.initialPassword} onChange={set('initialPassword')} error={errors.initialPassword} placeholder="Senha inicial" softMaxLength={72} />
           </div>
         </div>
 

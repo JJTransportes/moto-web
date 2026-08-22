@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
 import { validateMaxLength, validateRequired, validateSafeText } from '../utils/validators'
-import { maskCep, maskCountryCode, maskUf } from '../utils/masks'
+import { maskCep, maskCountryCode, maskUf, validateUf } from '../utils/masks'
 
 interface FormValues {
   name: string
@@ -112,7 +112,7 @@ export default function PartitionCreationPage() {
     e.lineTwo = validateMaxLength(form.lineTwo, 60, 'Complemento') ?? validateSafeText(form.lineTwo, 'Complemento')
     e.district = validateMaxLength(form.district, 60, 'Bairro') ?? validateSafeText(form.district, 'Bairro')
     e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
-    e.state = validateRequired(form.state, 'Estado')
+    e.state = validateUf(form.state)
     e.countryCode = validateRequired(form.countryCode, 'País')
     if (departmentList.length === 0) {
       e.departments = 'Adicione pelo menos uma secretaria.'

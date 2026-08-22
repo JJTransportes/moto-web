@@ -68,6 +68,21 @@ export function maskUf(value: string): string {
   return value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2)
 }
 
+const VALID_UFS = new Set([
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
+  'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
+  'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+])
+
+export function validateUf(uf: string): string | undefined {
+  const value = uf.trim().toUpperCase()
+  if (!value) return 'Estado é obrigatório.'
+  if (!VALID_UFS.has(value)) {
+    return 'Estado inválido. Use a sigla de uma UF válida (ex: SP, RJ, MG).'
+  }
+  return undefined
+}
+
 export function maskCountryCode(value: string): string {
   return value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2)
 }
