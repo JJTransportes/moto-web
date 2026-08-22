@@ -32,17 +32,14 @@ export function maskCpf(value: string): string {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
 }
 
+/**
+ * RG formats vary by state (SP: 9 chars digits+X; other states: up to 12
+ * alphanumeric chars, some with letters beyond X). Just upper-cases and caps
+ * length — no fixed punctuation pattern, since one doesn't fit every state.
+ * Matches the backend's accepted range (7-12 chars after stripping punctuation).
+ */
 export function maskRg(value: string): string {
-  const raw = value.toUpperCase().replace(/[^0-9X]/g, '').slice(0, 9)
-  const p1 = raw.slice(0, 2)
-  const p2 = raw.slice(2, 5)
-  const p3 = raw.slice(5, 8)
-  const p4 = raw.slice(8, 9)
-  let out = p1
-  if (p2) out += `.${p2}`
-  if (p3) out += `.${p3}`
-  if (p4) out += `-${p4}`
-  return out
+  return value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 12)
 }
 
 /** Strips punctuation for API submission — backend expects raw digits (CPF) / raw alphanumeric (RG), no dots/dashes. */
@@ -51,7 +48,7 @@ export function unmaskCpf(value: string): string {
 }
 
 export function unmaskRg(value: string): string {
-  return value.toUpperCase().replace(/[^0-9X]/g, '')
+  return value.toUpperCase().replace(/[^0-9A-Z]/g, '')
 }
 
 export function maskCnh(value: string): string {

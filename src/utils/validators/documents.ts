@@ -22,10 +22,15 @@ export function validateCnh(cnh: string): string | undefined {
   return undefined
 }
 
+/** Matches the backend's PersonValidator range (7-12 chars, after stripping punctuation). */
 export function validateRg(rg: string): string | undefined {
-  if (!rg.trim()) return 'RG é obrigatório.'
-  if (!/^[a-zA-Z0-9]+$/.test(rg.replace(/[\s.\-/]/g, ''))) {
+  const cleaned = rg.replace(/[\s.\-/]/g, '')
+  if (!cleaned) return 'RG é obrigatório.'
+  if (!/^[a-zA-Z0-9]+$/.test(cleaned)) {
     return 'RG deve conter apenas caracteres alfanuméricos.'
+  }
+  if (cleaned.length < 7 || cleaned.length > 12) {
+    return 'RG deve ter entre 7 e 12 caracteres.'
   }
   return undefined
 }
