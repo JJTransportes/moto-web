@@ -14,6 +14,13 @@ type PageStatus = 'loading' | 'loaded' | 'error' | 'empty'
 
 const PAGE_SIZE = 20
 
+// Matches the backend's SearchTermSanitizer.MaxLength cap on GET /api/drivers|passengers.
+const SEARCH_MAX_LENGTH = 100
+
+function sanitizeSearchInput(value: string): string {
+  return value.replace(/[<>]|--|\/\*|\*\//g, '')
+}
+
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
     <span
@@ -54,6 +61,12 @@ export default function UsersPage() {
   const [page, setPage] = useState(1)
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState<string>()
+  // Tracks whether we have anything on screen worth keeping visible during a
+  // refetch (search/page change). Only the very first fetch for a role shows
+  // the full skeleton; subsequent ones just dim the existing table instead of
+  // swapping it out, so typing in the search box doesn't cause a visual reset.
+  const [isFetching, setIsFetching] = useState(false)
+  const hasDataRef = useRef(false)
 
   const [drivers, setDrivers] = useState<DriverListItem[]>([])
   const [passengers, setPassengers] = useState<PassengerListItem[]>([])
@@ -86,37 +99,50 @@ export default function UsersPage() {
   // Reset page to 1 on role change
   useEffect(() => {
     setPage(1)
+    hasDataRef.current = false
   }, [role])
 
   // Fetch data
   const fetchData = useCallback(async () => {
     if (!token) return
 
-    setPageStatus('loading')
+    setIsFetching(true)
     setErrorMessage(undefined)
     abortRef.current = false
+
+    // Only the first fetch (no data on screen yet) shows the full skeleton —
+    // refetches triggered by typing/paging keep the current table visible.
+    if (!hasDataRef.current) {
+      setPageStatus('loading')
+    }
 
     if (role === 'drivers') {
       const result = await listDrivers(token, page, PAGE_SIZE, search || undefined)
       if (abortRef.current) return
+      setIsFetching(false)
       if (result.ok) {
         setDrivers(result.data.items)
         setTotalCount(result.data.totalCount)
         setPageStatus(result.data.items.length === 0 ? 'empty' : 'loaded')
+        hasDataRef.current = true
       } else {
         setErrorMessage(result.message)
         setPageStatus('error')
+        hasDataRef.current = false
       }
     } else {
       const result = await listPassengers(token, page, PAGE_SIZE, search || undefined)
       if (abortRef.current) return
+      setIsFetching(false)
       if (result.ok) {
         setPassengers(result.data.items)
         setTotalCount(result.data.totalCount)
         setPageStatus(result.data.items.length === 0 ? 'empty' : 'loaded')
+        hasDataRef.current = true
       } else {
         setErrorMessage(result.message)
         setPageStatus('error')
+        hasDataRef.current = false
       }
     }
   }, [token, role, page, search])
@@ -231,10 +257,10 @@ export default function UsersPage() {
         <input
           type="text"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => setSearchInput(sanitizeSearchInput(e.target.value))}
           placeholder="Buscar por nome, e-mail, CPF ou RG..."
-          disabled={isLoading}
-          className="w-full max-w-md pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          maxLength={SEARCH_MAX_LENGTH}
+          className="w-full max-w-md pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
 
@@ -254,13 +280,13 @@ export default function UsersPage() {
       )}
 
       {pageStatus === 'empty' && (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+        <div className={`rounded-lg border border-gray-200 bg-white p-12 text-center transition-opacity duration-150 ${isFetching ? 'opacity-50' : 'opacity-100'}`}>
           <p className="text-gray-500">Nenhum usuário encontrado.</p>
         </div>
       )}
 
       {pageStatus === 'loaded' && (
-        <>
+        <div className={`space-y-4 transition-opacity duration-150 ${isFetching ? 'opacity-50' : 'opacity-100'}`}>
           {/* Table */}
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <table className="min-w-full divide-y divide-gray-200">
@@ -418,7 +444,7 @@ export default function UsersPage() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {successMessage && (
