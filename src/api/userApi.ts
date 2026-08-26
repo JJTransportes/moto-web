@@ -136,7 +136,9 @@ export async function setPriorityAccess(
     message:
       result.status === 401
         ? 'Sessão expirada. Faça login novamente.'
-        : 'Erro ao alterar acesso a pedidos prioritários. Tente novamente.',
+        : result.status === 404
+          ? 'Não foi possível alterar o acesso a pedidos prioritários (404). Verifique se o backend está atualizado.'
+          : 'Erro ao alterar acesso a pedidos prioritários. Tente novamente.',
   }
 }
 

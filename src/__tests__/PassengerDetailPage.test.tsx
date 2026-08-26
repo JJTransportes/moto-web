@@ -88,7 +88,7 @@ describe('PassengerDetailPage', () => {
       expect(heading).toHaveTextContent('Maria Passageira')
     })
     expect(screen.getByText('maria@example.com')).toBeInTheDocument()
-    expect(screen.getByText('52998224725')).toBeInTheDocument()
+    expect(screen.getByText('529.982.247-25')).toBeInTheDocument()
     expect(screen.getByText('12345678')).toBeInTheDocument()
     expect(screen.getByText('MAT-001')).toBeInTheDocument()
   })
