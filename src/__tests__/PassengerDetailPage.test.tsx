@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
 import PassengerDetailPage from '../pages/PassengerDetailPage'
-import { fetchPassengerProfile } from '../api/userApi'
+import { fetchPassengerProfile, setPriorityAccess } from '../api/userApi'
 
 vi.mock('../api/userApi', () => ({
   fetchPassengerProfile: vi.fn(),
@@ -12,13 +12,15 @@ vi.mock('../api/userApi', () => ({
     ok: true,
     data: { photoUrl: null },
   }),
+  setPriorityAccess: vi.fn(),
 }))
 
 const mockedFetchProfile = vi.mocked(fetchPassengerProfile)
+const mockedSetPriorityAccess = vi.mocked(setPriorityAccess)
 
 const passengerData = {
   passengerId: 'passenger-1',
-  userId: 'user-1',
+  userId: 'passenger-user-1',
   fullName: 'Maria Passageira',
   email: 'maria@example.com',
   cpf: '52998224725',
@@ -43,6 +45,7 @@ const passengerData = {
   isActive: true,
   createdAt: '2025-01-10T08:00:00.000Z',
   solicitationCount: 7,
+  priorityTravelsEnabled: false,
 }
 
 function renderPage(userId = 'passenger-user-1') {
@@ -55,7 +58,7 @@ function renderPage(userId = 'passenger-user-1') {
     <MemoryRouter initialEntries={[`/users/passengers/${userId}`]}>
       <AuthProvider>
         <Routes>
-          <Route path="/users/passengers/:userId" element={<PassengerDetailPage />} />
+          <Route path="/users/passengers/:passengerId" element={<PassengerDetailPage />} />
           <Route path="/users" element={<div>Users Page</div>} />
         </Routes>
       </AuthProvider>
@@ -107,7 +110,8 @@ describe('PassengerDetailPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('Inativo')).toBeInTheDocument()
+      const inactiveBadges = screen.getAllByText('Inativo')
+      expect(inactiveBadges.some((el) => el.className.includes('bg-red-100'))).toBe(true)
     })
   })
 
@@ -237,5 +241,104 @@ describe('PassengerDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Users Page')).toBeInTheDocument()
     })
+  })
+
+  it('shows priority access as inactive when disabled', async () => {
+    mockedFetchProfile.mockResolvedValue({
+      ok: true,
+      data: { ...passengerData, priorityTravelsEnabled: false },
+    })
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByText('Pedidos prioritários')).toBeInTheDocument()
+    })
+    const toggle = screen.getByRole('switch')
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByText('Inativo')).toBeInTheDocument()
+  })
+
+  it('shows priority access as active when enabled', async () => {
+    mockedFetchProfile.mockResolvedValue({
+      ok: true,
+      data: { ...passengerData, priorityTravelsEnabled: true },
+    })
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+    })
+    expect(screen.getAllByText('Ativo').length).toBeGreaterThan(0)
+  })
+
+  it('enables priority access when toggled on', async () => {
+    mockedFetchProfile.mockResolvedValue({
+      ok: true,
+      data: { ...passengerData, priorityTravelsEnabled: false },
+    })
+    mockedSetPriorityAccess.mockResolvedValue({ ok: true })
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    })
+
+    await user.click(screen.getByRole('switch'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+    })
+    expect(mockedSetPriorityAccess).toHaveBeenCalledWith('valid-token', 'passenger-user-1', true)
+    expect(screen.getAllByText('Ativo').length).toBeGreaterThan(0)
+  })
+
+  it('disables priority access when toggled off', async () => {
+    mockedFetchProfile.mockResolvedValue({
+      ok: true,
+      data: { ...passengerData, priorityTravelsEnabled: true },
+    })
+    mockedSetPriorityAccess.mockResolvedValue({ ok: true })
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true')
+    })
+
+    await user.click(screen.getByRole('switch'))
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    })
+    expect(mockedSetPriorityAccess).toHaveBeenCalledWith('valid-token', 'passenger-user-1', false)
+    expect(screen.getByText('Inativo')).toBeInTheDocument()
+  })
+
+  it('shows an error message when priority toggle fails and keeps previous state', async () => {
+    mockedFetchProfile.mockResolvedValue({
+      ok: true,
+      data: { ...passengerData, priorityTravelsEnabled: false },
+    })
+    mockedSetPriorityAccess.mockResolvedValue({
+      ok: false,
+      status: 500,
+      message: 'Erro ao alterar acesso a pedidos prioritários. Tente novamente.',
+    })
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
+    })
+
+    await user.click(screen.getByRole('switch'))
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Erro ao alterar acesso a pedidos prioritários. Tente novamente.'),
+      ).toBeInTheDocument()
+    })
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false')
   })
 })
