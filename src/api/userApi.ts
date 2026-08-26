@@ -67,6 +67,7 @@ export interface PassengerDepartmentDto {
 
 export interface PassengerProfile {
   passengerId: string
+  userId: string
   fullName: string
   email: string
   cpf: string
@@ -80,6 +81,7 @@ export interface PassengerProfile {
   isActive: boolean
   createdAt: string
   solicitationCount: number
+  priorityTravelsEnabled: boolean
 
   // Enhanced fields
   access?: string
@@ -108,6 +110,31 @@ export async function fetchPassengerProfile(
       result.status === 404
         ? 'Passageiro não encontrado.'
         : 'Erro ao carregar dados do passageiro. Tente novamente.',
+  }
+}
+
+export type PriorityAccessResult =
+  | { ok: true }
+  | { ok: false; status: number; message: string }
+
+export async function setPriorityAccess(
+  token: string,
+  userId: string,
+  priority: boolean,
+): Promise<PriorityAccessResult> {
+  const result = await fetchProtected<void>(
+    `/api/passengers/${userId}/${priority}`,
+    token,
+    { method: 'POST' },
+  )
+  if (result.ok) return { ok: true }
+  return {
+    ok: false,
+    status: result.status,
+    message:
+      result.status === 401
+        ? 'Sessão expirada. Faça login novamente.'
+        : 'Erro ao alterar acesso a pedidos prioritários. Tente novamente.',
   }
 }
 

@@ -11,6 +11,7 @@ import {
   ShieldX,
   Trash2,
   User,
+  Zap,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -18,6 +19,7 @@ import {
   deleteUserAccount,
   fetchPassengerProfile,
   fetchUserProfilePhoto,
+  setPriorityAccess,
   type PassengerProfile,
 } from '../api/userApi'
 import { useAuth } from '../auth/AuthContext'
@@ -57,6 +59,11 @@ export default function PassengerDetailPage() {
   const [deleteError, setDeleteError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
+  // Priority access state
+  const [priorityEnabled, setPriorityEnabled] = useState(false)
+  const [priorityUpdating, setPriorityUpdating] = useState(false)
+  const [priorityError, setPriorityError] = useState<string | undefined>()
+
   const loadPassenger = useCallback(async () => {
     if (!token || !passengerId) return
     setPageStatus('loading')
@@ -65,6 +72,7 @@ export default function PassengerDetailPage() {
     const result = await fetchPassengerProfile(token, passengerId)
     if (result.ok) {
       setPassenger(result.data)
+      setPriorityEnabled(result.data.priorityTravelsEnabled)
       setPageStatus('loaded')
 
       // Use photoUrl from profile if available, otherwise fetch separately
@@ -94,6 +102,22 @@ export default function PassengerDetailPage() {
     const timer = setTimeout(() => setSuccessMessage(undefined), 4000)
     return () => clearTimeout(timer)
   }, [successMessage])
+
+  const handlePriorityToggle = useCallback(async () => {
+    if (!token || !passenger) return
+    const next = !priorityEnabled
+    setPriorityUpdating(true)
+    setPriorityError(undefined)
+
+    const result = await setPriorityAccess(token, passenger.userId, next)
+
+    setPriorityUpdating(false)
+    if (result.ok) {
+      setPriorityEnabled(next)
+    } else {
+      setPriorityError(result.message)
+    }
+  }, [token, passenger, priorityEnabled])
 
   const handleDelete = useCallback(async (adminCode: string) => {
     if (!token || !passengerId) return
@@ -198,6 +222,52 @@ export default function PassengerDetailPage() {
           {passenger.isActive ? 'Ativo' : 'Inativo'}
         </span>
       </div>
+
+      {/* Priority access toggle */}
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <Zap
+            className={`h-4 w-4 shrink-0 ${priorityEnabled ? 'text-amber-500' : 'text-gray-400'}`}
+          />
+          <div>
+            <p className="text-sm font-medium text-gray-700">Pedidos prioritários</p>
+            <p className="text-xs text-gray-400">
+              Permite que o passageiro realize solicitações prioritárias
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span
+            className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+              priorityEnabled ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'
+            }`}
+          >
+            {priorityEnabled ? 'Ativo' : 'Inativo'}
+          </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={priorityEnabled}
+            aria-label="Alternar acesso a pedidos prioritários"
+            onClick={handlePriorityToggle}
+            disabled={priorityUpdating}
+            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+              priorityEnabled ? 'bg-amber-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                priorityEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+      {priorityError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+          {priorityError}
+        </div>
+      )}
 
       {/* Info Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
