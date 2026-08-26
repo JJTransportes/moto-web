@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import DashboardPage from './pages/DashboardPage'
 import DriverCreationPage from './pages/DriverCreationPage'
 import DriverDetailPage from './pages/DriverDetailPage'
+import DriverEditPage from './pages/DriverEditPage'
 import FleetCreationPage from './pages/FleetCreationPage'
 import FleetDetailPage from './pages/FleetDetailPage'
 import FleetEditPage from './pages/FleetEditPage'
@@ -17,6 +18,7 @@ import PartitionEditPage from './pages/PartitionEditPage'
 import PartitionListPage from './pages/PartitionListPage'
 import PassengerCreationPage from './pages/PassengerCreationPage'
 import PassengerDetailPage from './pages/PassengerDetailPage'
+import PassengerEditPage from './pages/PassengerEditPage'
 import PasswordResetPage from './pages/PasswordResetPage'
 import ReportsPage from './pages/ReportsPage'
 import SettingsPage from './pages/SettingsPage'
@@ -55,7 +57,9 @@ export default function App() {
                 <Route element={<ProtectedRoute requiredRole="GlobalAdmin" />}>
                   <Route path="/users" element={<UsersPage />} />
                   <Route path="/users/drivers/:driverId" element={<DriverDetailPage />} />
+                  <Route path="/users/drivers/:driverId/edit" element={<DriverEditPage />} />
                   <Route path="/users/passengers/:passengerId" element={<PassengerDetailPage />} />
+                  <Route path="/users/passengers/:passengerId/edit" element={<PassengerEditPage />} />
                   <Route path="/users/passengers/new" element={<PassengerCreationPage />} />
                   <Route path="/users/drivers/new" element={<DriverCreationPage />} />
                   <Route path="/settings" element={<SettingsPage />} />

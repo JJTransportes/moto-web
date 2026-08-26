@@ -4,7 +4,8 @@ import { useAuth } from '../auth/AuthContext'
 import { listCategories, type CategorySummary } from '../api/categoryApi'
 import { createVehicle } from '../api/vehicleApi'
 import FormField from '../components/FormField'
-import { validateRequired } from '../utils/validators'
+import { validateMaxLength, validateRequired, validateSafeText } from '../utils/validators'
+import { maskPlate, validatePlate } from '../utils/masks'
 
 interface FormValues {
   brand: string
@@ -54,8 +55,8 @@ export default function FleetCreationPage() {
 
   function validate(): boolean {
     const e: FieldErrors = {}
-    e.brand = validateRequired(form.brand, 'Marca')
-    e.model = validateRequired(form.model, 'Modelo')
+    e.brand = validateRequired(form.brand, 'Marca') ?? validateMaxLength(form.brand, 20, 'Marca') ?? validateSafeText(form.brand, 'Marca')
+    e.model = validateRequired(form.model, 'Modelo') ?? validateMaxLength(form.model, 20, 'Modelo') ?? validateSafeText(form.model, 'Modelo')
     if (!form.year.trim()) {
       e.year = 'Ano é obrigatório.'
     } else {
@@ -64,7 +65,7 @@ export default function FleetCreationPage() {
         e.year = 'Ano inválido.'
       }
     }
-    e.plate = validateRequired(form.plate, 'Placa')
+    e.plate = validatePlate(form.plate)
     e.categoryId = validateRequired(form.categoryId, 'Categoria')
     setErrors(e)
     return Object.values(e).every(v => !v)
@@ -97,6 +98,11 @@ export default function FleetCreationPage() {
     label: c.title,
   }))
 
+  const isFormComplete =
+    Object.values(form).every(v => v.trim() !== '') &&
+    form.brand.length <= 20 &&
+    form.model.length <= 20
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
@@ -119,40 +125,51 @@ export default function FleetCreationPage() {
             <FormField
               id="brand"
               label="Marca"
+              required
               value={form.brand}
               onChange={set('brand')}
               error={errors.brand}
               placeholder="Ex: Toyota"
+              softMaxLength={20}
             />
             <FormField
               id="model"
               label="Modelo"
+              required
               value={form.model}
               onChange={set('model')}
               error={errors.model}
               placeholder="Ex: Corolla"
+              softMaxLength={20}
             />
             <FormField
               id="year"
               label="Ano"
+              required
               value={form.year}
               onChange={set('year')}
               error={errors.year}
               placeholder="Ex: 2024"
+              maxLength={4}
+              digitsOnly
             />
             <FormField
               id="plate"
               label="Placa"
+              required
               value={form.plate}
               onChange={set('plate')}
               error={errors.plate}
               placeholder="Ex: ABC1D23"
+              maxLength={7}
+              mask={maskPlate}
             />
             <div className="col-span-2">
               <FormField
                 id="categoryId"
                 type="select"
                 label="Categoria"
+                required
                 value={form.categoryId}
                 onChange={set('categoryId')}
                 error={errors.categoryId}
@@ -178,7 +195,7 @@ export default function FleetCreationPage() {
           </Link>
           <button
             type="submit"
-            disabled={submitting || categoriesError}
+            disabled={submitting || categoriesError || !isFormComplete}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {submitting ? 'Salvando...' : 'Cadastrar Veículo'}

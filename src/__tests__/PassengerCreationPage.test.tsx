@@ -116,7 +116,7 @@ describe('PassengerCreationPage', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 
-  it('calls createPassenger with correct departmentId when modal is confirmed', async () => {
+  it('calls createPassenger with correct departmentIds when modal is confirmed', async () => {
     mockedCreatePassenger.mockResolvedValueOnce({ ok: true, userId: 'new-passenger-1' })
     const user = userEvent.setup()
     await renderPage()
@@ -139,7 +139,7 @@ describe('PassengerCreationPage', () => {
             countryCode: 'BR',
           },
           publicPartitionId: 'part-1',
-          department: 'dept-1',
+          departmentIds: ['dept-1'],
         }),
       )
     })

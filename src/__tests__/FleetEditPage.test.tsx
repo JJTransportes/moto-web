@@ -85,12 +85,14 @@ describe('FleetEditPage', () => {
     })
   })
 
-  it('shows validation errors when submitting empty form after clearing', async () => {
+  it('disables the submit button when fields are cleared', async () => {
     mockedFetch.mockResolvedValueOnce({ ok: true, data: VEHICLE })
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
     renderPage()
 
     await waitFor(() => screen.getByDisplayValue('Toyota'))
+
+    expect(screen.getByText('Salvar Alterações')).not.toBeDisabled()
 
     // Clear all fields
     fireEvent.change(screen.getByLabelText('Marca'), { target: { value: '' } })
@@ -99,14 +101,8 @@ describe('FleetEditPage', () => {
     fireEvent.change(screen.getByLabelText('Placa'), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: '' } })
 
-    fireEvent.click(screen.getByText('Salvar Alterações'))
-
     await waitFor(() => {
-      expect(screen.getByText('Marca é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Modelo é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Ano é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Placa é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Categoria é obrigatório.')).toBeInTheDocument()
+      expect(screen.getByText('Salvar Alterações')).toBeDisabled()
     })
   })
 

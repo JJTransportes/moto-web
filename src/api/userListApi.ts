@@ -56,12 +56,20 @@ export type ListResult<T> =
   | { ok: true; data: T }
   | { ok: false; status: number; message: string }
 
+function sanitizeSearchTerm(value: string): string {
+  const trimmed = value.trim()
+  if (/[.\-/]/.test(trimmed) && /^[0-9A-Za-z.\-/]+$/.test(trimmed)) {
+    return trimmed.replace(/[.\-/]/g, '')
+  }
+  return trimmed
+}
+
 function buildUrl(base: string, page: number, pageSize: number, search?: string): string {
   const params = new URLSearchParams()
   params.set('page', String(page))
   params.set('pageSize', String(pageSize))
   if (search) {
-    params.set('search', search)
+    params.set('search', sanitizeSearchTerm(search))
   }
   return `${base}?${params.toString()}`
 }

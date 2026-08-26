@@ -67,14 +67,13 @@ describe('PartitionCreationPage', () => {
     })
   })
 
-  it('blocks submission and shows error when no categories are selected', async () => {
+  it('keeps submission blocked when no categories are selected', async () => {
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
     renderPage()
     await waitFor(() => screen.getByText('Categoria A'))
     fillRequiredFields()
     // Do not select any category checkboxes
-    fireEvent.click(screen.getByText('Criar Unidade'))
-    await waitFor(() => expect(screen.getByText(/Selecione pelo menos uma categoria/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Criar Unidade')).toBeDisabled())
     expect(mockedCreate).not.toHaveBeenCalled()
   })
 

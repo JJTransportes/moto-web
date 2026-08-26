@@ -67,20 +67,12 @@ describe('FleetCreationPage', () => {
     })
   })
 
-  it('shows validation errors when submitting empty form', async () => {
+  it('keeps the submit button disabled when the form is empty', async () => {
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
     renderPage()
     await waitFor(() => screen.getByText('Sedan'))
 
-    fireEvent.click(screen.getByText('Cadastrar Veículo'))
-
-    await waitFor(() => {
-      expect(screen.getByText('Marca é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Modelo é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Ano é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Placa é obrigatório.')).toBeInTheDocument()
-      expect(screen.getByText('Categoria é obrigatório.')).toBeInTheDocument()
-    })
+    expect(screen.getByText('Cadastrar Veículo')).toBeDisabled()
     expect(mockedCreate).not.toHaveBeenCalled()
   })
 
@@ -89,6 +81,7 @@ describe('FleetCreationPage', () => {
     renderPage()
     await waitFor(() => screen.getByText('Sedan'))
     fillRequiredFields()
+    fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'cat-1' } })
     fireEvent.change(screen.getByLabelText('Ano'), { target: { value: '1800' } })
     fireEvent.click(screen.getByText('Cadastrar Veículo'))
 
