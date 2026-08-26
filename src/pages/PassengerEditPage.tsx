@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext'
 import FormField from '../components/FormField'
 import ConfirmationModal from '../components/ConfirmationModal'
 import { fetchPassengerProfile, updatePassenger, type PassengerProfile } from '../api/userApi'
+import { fetchPartitionDepartments, type DepartmentOption } from '../api/publicPartitionApi'
 import {
   validateFullName,
   validateCpf,
@@ -24,6 +25,7 @@ interface FormValues {
   address: string
   city: string
   state: string
+  department: string
 }
 
 type FieldErrors = Partial<FormValues>
@@ -38,6 +40,7 @@ function toFormValues(p: PassengerProfile): FormValues {
     address: p.address.lineOne,
     city: p.address.city,
     state: p.address.state,
+    department: p.departments[0]?.departmentId ?? '',
   }
 }
 
@@ -55,6 +58,10 @@ export default function PassengerEditPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
 
+  const [departments, setDepartments] = useState<DepartmentOption[]>([])
+  const [departmentsLoading, setDepartmentsLoading] = useState(false)
+  const [departmentsError, setDepartmentsError] = useState<string | undefined>()
+
   useEffect(() => {
     if (!token || !passengerId) return
     fetchPassengerProfile(token, passengerId).then(result => {
@@ -63,6 +70,21 @@ export default function PassengerEditPage() {
       setForm(toFormValues(result.data))
     })
   }, [token, passengerId])
+
+  useEffect(() => {
+    if (!token || !passenger) return
+    setDepartmentsLoading(true)
+    setDepartmentsError(undefined)
+    fetchPartitionDepartments(token, passenger.publicPartitionId).then(result => {
+      setDepartmentsLoading(false)
+      if (result.ok) {
+        setDepartments(result.data)
+      } else {
+        setDepartmentsError(result.message)
+        setDepartments([])
+      }
+    })
+  }, [token, passenger])
 
   if (loadError) {
     return (
@@ -144,6 +166,7 @@ export default function PassengerEditPage() {
         countryCode: 'BR',
       },
       adminCode,
+      departmentIds: form.department ? [form.department] : [],
     })
 
     setModalLoading(false)
@@ -167,9 +190,29 @@ export default function PassengerEditPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <p className="mb-1 text-sm font-medium text-gray-700">Unidade pública</p>
-          <p className="text-sm text-gray-500">
+          <p className="mb-4 text-sm text-gray-500">
             {passenger.publicPartitionName} <span className="text-gray-400">(alterar em Unidades Públicas)</span>
           </p>
+
+          {departmentsLoading ? (
+            <FormField id="department" label="Departamento" type="select" value="" onChange={() => {}} disabled options={[]} />
+          ) : departmentsError ? (
+            <p className="text-sm text-red-500" role="alert">{departmentsError}</p>
+          ) : departments.length === 0 ? (
+            <p className="text-sm text-yellow-600">Nenhum departamento disponível para esta unidade.</p>
+          ) : (
+            <>
+              <FormField
+                id="department"
+                label="Departamento"
+                type="select"
+                value={form.department}
+                onChange={set('department')}
+                options={departments.map(d => ({ value: d.departmentId, label: d.name }))}
+              />
+              <p className="mt-1 text-xs text-gray-400">Deixe em branco para remover o vínculo com departamento.</p>
+            </>
+          )}
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">

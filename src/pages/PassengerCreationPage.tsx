@@ -150,7 +150,7 @@ export default function PassengerCreationPage() {
         state: form.state,
         countryCode: 'BR',
       },
-      department: form.department,
+      departmentIds: form.department ? [form.department] : [],
       publicPartitionId: form.publicPartitionId,
       email: form.email,
       initialPassword: form.initialPassword,

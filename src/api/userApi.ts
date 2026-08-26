@@ -168,7 +168,7 @@ export interface CreatePassengerRequest {
   registration: string
   birthdate: string
   address: AddressCommand
-  department: string
+  departmentIds: string[]
   publicPartitionId: string
   email: string
   initialPassword: string
@@ -228,6 +228,7 @@ export interface UpdatePassengerRequest {
   birthdate: string
   address: AddressCommand
   adminCode: string
+  departmentIds?: string[]
 }
 
 export interface UpdateDriverRequest {
