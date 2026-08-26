@@ -88,7 +88,7 @@ describe('DriverCreationPage', () => {
     expect(screen.queryByLabelText('Unidade pública')).not.toBeInTheDocument()
   })
 
-  it('does not open the modal when CNH is missing', async () => {
+  it('disables the submit button and does not open the modal when CNH is missing', async () => {
     mockedFetchAvailableVehicles.mockResolvedValueOnce({ ok: true, data: mockVehicles })
     const user = userEvent.setup()
     renderPage()
@@ -96,19 +96,22 @@ describe('DriverCreationPage', () => {
     fillValidForm()
     fireEvent.change(screen.getByLabelText('CNH'), { target: { value: '' } })
 
+    expect(screen.getByText('Criar Motorista')).toBeDisabled()
+
     await user.click(screen.getByText('Criar Motorista'))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByText('CNH é obrigatório.')).toBeInTheDocument()
   })
 
-  it('does not open the modal when vehicle is not selected', async () => {
+  it('disables the submit button and does not open the modal when vehicle is not selected', async () => {
     mockedFetchAvailableVehicles.mockResolvedValueOnce({ ok: true, data: mockVehicles })
     const user = userEvent.setup()
     renderPage()
     await waitFor(() => expect(screen.queryByText('Carregando veículos...')).not.toBeInTheDocument())
     fillValidForm()
     fireEvent.change(screen.getByLabelText('Selecione o veículo'), { target: { value: '' } })
+
+    expect(screen.getByText('Criar Motorista')).toBeDisabled()
 
     await user.click(screen.getByText('Criar Motorista'))
 

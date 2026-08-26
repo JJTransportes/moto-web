@@ -1,18 +1,20 @@
-import { AlertTriangle, ArrowLeft, Briefcase, Calendar, Car, Loader2, Mail, MapPin, ShieldCheck, ShieldX, Trash2, User } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Briefcase, Calendar, Car, Mail, MapPin, Pencil, Power, ShieldCheck, ShieldX, Trash2, User } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  changeDriverVehicle,
+  activateUserAccount,
+  deactivateUserAccount,
   deleteUserAccount,
   fetchDriverProfile,
   fetchUserProfilePhoto,
   type DriverProfile,
 } from '../api/userApi'
-import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
-import FormField from '../components/FormField'
+import SuccessModal from '../components/SuccessModal'
+import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
+import { maskCpf, maskRg } from '../utils/masks'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -42,18 +44,18 @@ export default function DriverDetailPage() {
   const [driver, setDriver] = useState<DriverProfile | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
 
-  // Vehicle switching state
-  const [vehicles, setVehicles] = useState<AvailableVehicle[]>([])
-  const [vehiclesLoading, setVehiclesLoading] = useState(true)
-  const [selectedVehicleId, setSelectedVehicleId] = useState('')
-  const [switching, setSwitching] = useState(false)
-  const [switchError, setSwitchError] = useState<string>()
+  const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   // Deletion state
   const [deleting, setDeleting] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState<string | undefined>()
-  const [successMessage, setSuccessMessage] = useState<string | undefined>()
+  const [deleteSuccess, setDeleteSuccess] = useState(false)
+
+  // Activate/deactivate state
+  const [statusModalOpen, setStatusModalOpen] = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState<string | undefined>()
 
   const loadDriver = useCallback(async () => {
     if (!token || !driverId) return
@@ -82,18 +84,9 @@ export default function DriverDetailPage() {
     }
   }, [token, driverId])
 
-  const loadAvailableVehicles = useCallback(async () => {
-    if (!token) return
-    setVehiclesLoading(true)
-    const result = await fetchAvailableVehicles(token)
-    setVehiclesLoading(false)
-    if (result.ok) setVehicles(result.data)
-  }, [token])
-
   useEffect(() => {
     loadDriver()
-    loadAvailableVehicles()
-  }, [loadDriver, loadAvailableVehicles])
+  }, [loadDriver])
 
   // Auto-dismiss success message after 4 seconds
   useEffect(() => {
@@ -108,43 +101,34 @@ export default function DriverDetailPage() {
     setDeleteError(undefined)
 
     const result = await deleteUserAccount(token, driverId, adminCode)
+    setDeleteLoading(false)
 
     if (result.ok) {
       setDeleting(false)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
-      setSuccessMessage('Conta excluída com sucesso.')
-      await loadDriver()
-    } else if (result.status === 401) {
+      setDeleteSuccess(true)
+    } else {
       setDeleteError(result.message)
-      setDeleteLoading(false)
-    } else {
-      setDeleting(false)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
-      setSuccessMessage(result.message)
     }
-  }, [token, driverId, loadDriver])
+  }, [token, driverId])
 
-  const handleSwitchVehicle = async () => {
-    if (!token || !driverId || !selectedVehicleId) return
-    setSwitching(true)
-    setSwitchError(undefined)
+  const handleToggleStatus = useCallback(async (adminCode: string) => {
+    if (!token || !driverId || !driver) return
+    setStatusLoading(true)
+    setStatusError(undefined)
 
-    const result = await changeDriverVehicle(token, driverId, selectedVehicleId)
+    const result = driver.isActive
+      ? await deactivateUserAccount(token, driverId, adminCode)
+      : await activateUserAccount(token, driverId, adminCode)
+    setStatusLoading(false)
+
     if (result.ok) {
-      setSelectedVehicleId('')
-      setSwitchError(undefined)
-      // Reload driver profile and available vehicles
+      setStatusModalOpen(false)
+      setSuccessMessage(driver.isActive ? 'Motorista inativado com sucesso.' : 'Motorista ativado com sucesso.')
       await loadDriver()
-      await loadAvailableVehicles()
     } else {
-      setSwitchError(result.message)
+      setStatusError(result.message)
     }
-    setSwitching(false)
-  }
-
-  const canSwitch = selectedVehicleId && !switching
+  }, [token, driverId, driver, loadDriver])
 
   const formatDate = (iso: string) => {
     return new Date(iso).toLocaleDateString('pt-BR', {
@@ -227,6 +211,28 @@ export default function DriverDetailPage() {
             {driver.isActive ? 'Ativo' : 'Inativo'}
           </span>
         )}
+        <div className="ml-auto flex items-center gap-2">
+          {driverId !== user?.userId && (
+            <button
+              onClick={() => setStatusModalOpen(true)}
+              disabled={statusLoading}
+              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${driver.isActive
+                ? 'border-yellow-300 bg-white text-yellow-700 hover:bg-yellow-50'
+                : 'border-green-300 bg-white text-green-700 hover:bg-green-50'
+                }`}
+            >
+              <Power className="h-4 w-4" />
+              {driver.isActive ? 'Inativar' : 'Ativar'}
+            </button>
+          )}
+          <Link
+            to={`/users/drivers/${driverId}/edit`}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar
+          </Link>
+        </div>
       </div>
 
       {/* Driver Info Cards */}
@@ -241,8 +247,9 @@ export default function DriverDetailPage() {
           label="E-mail"
           value={driver.email}
         />
-        {driver.cpf && <InfoCard label="CPF" value={driver.cpf} />}
-        {driver.rg && <InfoCard label="RG" value={driver.rg} />}
+        {driver.cpf && <InfoCard label="CPF" value={maskCpf(driver.cpf)} />}
+        {driver.rg && <InfoCard label="RG" value={maskRg(driver.rg)} />}
+        {driver.registration && <InfoCard label="Matrícula" value={driver.registration} />}
         {driver.cnh && <InfoCard label="CNH" value={driver.cnh} />}
         {driver.birthdate && (
           <InfoCard
@@ -317,56 +324,47 @@ export default function DriverDetailPage() {
         )}
       </div>
 
-      {/* Vehicle Switching */}
+      {/* Address */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="mb-4 text-base font-semibold text-gray-700">Alterar veículo</h2>
-        <p className="mb-4 text-sm text-gray-500">
-          Selecione um veículo disponível para associar a este motorista. O veículo atual será
-          desassociado automaticamente.
-        </p>
-
-        {vehiclesLoading ? (
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Carregando veículos disponíveis...
-          </div>
-        ) : vehicles.length === 0 ? (
-          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <p className="text-sm text-yellow-700">
-              Nenhum veículo disponível no momento.
-            </p>
+        <h2 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-700">
+          <MapPin className="h-5 w-5 text-blue-600" />
+          Endereço
+        </h2>
+        {driver.address ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Logradouro</p>
+              <p className="mt-1 text-sm font-medium text-gray-800">{driver.address.lineOne}</p>
+            </div>
+            {driver.address.lineTwo && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Complemento</p>
+                <p className="mt-1 text-sm font-medium text-gray-800">{driver.address.lineTwo}</p>
+              </div>
+            )}
+            {driver.address.district && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Bairro</p>
+                <p className="mt-1 text-sm font-medium text-gray-800">{driver.address.district}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Cidade/Estado</p>
+              <p className="mt-1 text-sm font-medium text-gray-800">{driver.address.city}/{driver.address.state}</p>
+            </div>
+            {driver.address.postalCode && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-400">CEP</p>
+                <p className="mt-1 text-sm font-medium text-gray-800">{driver.address.postalCode}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">País</p>
+              <p className="mt-1 text-sm font-medium text-gray-800">{driver.address.countryCode}</p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <FormField
-              id="switchVehicle"
-              label="Veículo disponível"
-              type="select"
-              value={selectedVehicleId}
-              onChange={setSelectedVehicleId}
-              options={vehicles.map(v => ({
-                value: v.vehicleId,
-                label: `${v.brand} ${v.model} - ${v.plate}${v.categoryTitle ? ` (${v.categoryTitle})` : ''}`,
-              }))}
-            />
-            <button
-              onClick={handleSwitchVehicle}
-              disabled={!canSwitch}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {switching ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Alterando...
-                </>
-              ) : (
-                'Alterar veículo'
-              )}
-            </button>
-            {switchError && (
-              <p className="text-sm text-red-600" role="alert">{switchError}</p>
-            )}
-          </div>
+          <p className="text-sm text-gray-500">Nenhum endereço cadastrado.</p>
         )}
       </div>
 
@@ -378,8 +376,8 @@ export default function DriverDetailPage() {
             Zona de Perigo
           </h2>
           <p className="mb-4 text-sm text-red-600">
-            Excluir esta conta irá desativá-la permanentemente. O motorista não poderá mais
-            acessar o sistema ou realizar viagens.
+            Excluir esta conta é permanente e não pode ser desfeito. O motorista perderá o acesso
+            ao sistema para sempre e não será possível reativar essa conta pela interface.
           </p>
           <button
             onClick={() => setDeleting(true)}
@@ -387,23 +385,20 @@ export default function DriverDetailPage() {
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 className="h-4 w-4" />
-            Excluir conta
+            Excluir conta permanentemente
           </button>
         </div>
       )}
 
-      {/* Success notification */}
       {successMessage && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {successMessage}
-        </div>
+        <Toast message={successMessage} onClose={() => setSuccessMessage(undefined)} />
       )}
 
-      {/* Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={deleting}
-        title="Excluir conta"
-        description={`Tem certeza que deseja excluir a conta de ${driver.name}? Esta ação é irreversível.`}
+        title="Excluir conta permanentemente"
+        description={`Esta ação não pode ser desfeita. Digite seu código de administrador para excluir a conta de ${driver.name} permanentemente.`}
         onConfirm={handleDelete}
         onCancel={() => {
           setDeleting(false)
@@ -411,6 +406,33 @@ export default function DriverDetailPage() {
         }}
         loading={deleteLoading}
         error={deleteError}
+      />
+
+      {/* Delete Success Modal */}
+      <SuccessModal
+        isOpen={deleteSuccess}
+        title="Conta excluída"
+        description={`A conta de ${driver.name} foi excluída permanentemente. Ela não aparecerá mais na lista de usuários.`}
+        buttonLabel="Voltar para Usuários"
+        onConfirm={() => navigate('/users')}
+      />
+
+      {/* Status Toggle Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={statusModalOpen}
+        title={driver.isActive ? 'Inativar conta' : 'Ativar conta'}
+        description={
+          driver.isActive
+            ? `Digite seu código de administrador para inativar a conta de ${driver.name}. Você pode reativá-la depois.`
+            : `Digite seu código de administrador para reativar a conta de ${driver.name}.`
+        }
+        onConfirm={handleToggleStatus}
+        onCancel={() => {
+          setStatusModalOpen(false)
+          setStatusError(undefined)
+        }}
+        loading={statusLoading}
+        error={statusError}
       />
     </div>
   )

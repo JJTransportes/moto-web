@@ -3,15 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { listDrivers, listPassengers } from '../api/userListApi'
 import type { DriverListItem, PassengerListItem } from '../api/userListApi'
-import { fetchUserProfilePhoto, deleteUserAccount } from '../api/userApi'
+import { fetchUserProfilePhoto, activateUserAccount, deactivateUserAccount } from '../api/userApi'
 import ConfirmationModal from '../components/ConfirmationModal'
+import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
-import { Users, Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
+import { Users, Search, ChevronLeft, ChevronRight, Power } from 'lucide-react'
 
 type Role = 'drivers' | 'passengers'
 type PageStatus = 'loading' | 'loaded' | 'error' | 'empty'
 
 const PAGE_SIZE = 20
+
+// Matches the backend's SearchTermSanitizer.MaxLength cap on GET /api/drivers|passengers.
+const SEARCH_MAX_LENGTH = 100
+
+function sanitizeSearchInput(value: string): string {
+  return value.replace(/[<>]|--|\/\*|\*\//g, '')
+}
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
@@ -53,16 +61,22 @@ export default function UsersPage() {
   const [page, setPage] = useState(1)
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState<string>()
+  // Tracks whether we have anything on screen worth keeping visible during a
+  // refetch (search/page change). Only the very first fetch for a role shows
+  // the full skeleton; subsequent ones just dim the existing table instead of
+  // swapping it out, so typing in the search box doesn't cause a visual reset.
+  const [isFetching, setIsFetching] = useState(false)
+  const hasDataRef = useRef(false)
 
   const [drivers, setDrivers] = useState<DriverListItem[]>([])
   const [passengers, setPassengers] = useState<PassengerListItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [photoMap, setPhotoMap] = useState<Map<string, string | null>>(new Map())
 
-  // Deletion state
-  const [deletingUser, setDeletingUser] = useState<{ userId: string; fullName: string } | null>(null)
-  const [deleteLoading, setDeleteLoading] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | undefined>()
+  // Activate/deactivate state
+  const [statusTarget, setStatusTarget] = useState<{ userId: string; fullName: string; isActive: boolean } | null>(null)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [statusError, setStatusError] = useState<string | undefined>()
   const [successMessage, setSuccessMessage] = useState<string | undefined>()
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -85,37 +99,50 @@ export default function UsersPage() {
   // Reset page to 1 on role change
   useEffect(() => {
     setPage(1)
+    hasDataRef.current = false
   }, [role])
 
   // Fetch data
   const fetchData = useCallback(async () => {
     if (!token) return
 
-    setPageStatus('loading')
+    setIsFetching(true)
     setErrorMessage(undefined)
     abortRef.current = false
+
+    // Only the first fetch (no data on screen yet) shows the full skeleton —
+    // refetches triggered by typing/paging keep the current table visible.
+    if (!hasDataRef.current) {
+      setPageStatus('loading')
+    }
 
     if (role === 'drivers') {
       const result = await listDrivers(token, page, PAGE_SIZE, search || undefined)
       if (abortRef.current) return
+      setIsFetching(false)
       if (result.ok) {
         setDrivers(result.data.items)
         setTotalCount(result.data.totalCount)
         setPageStatus(result.data.items.length === 0 ? 'empty' : 'loaded')
+        hasDataRef.current = true
       } else {
         setErrorMessage(result.message)
         setPageStatus('error')
+        hasDataRef.current = false
       }
     } else {
       const result = await listPassengers(token, page, PAGE_SIZE, search || undefined)
       if (abortRef.current) return
+      setIsFetching(false)
       if (result.ok) {
         setPassengers(result.data.items)
         setTotalCount(result.data.totalCount)
         setPageStatus(result.data.items.length === 0 ? 'empty' : 'loaded')
+        hasDataRef.current = true
       } else {
         setErrorMessage(result.message)
         setPageStatus('error')
+        hasDataRef.current = false
       }
     }
   }, [token, role, page, search])
@@ -134,29 +161,32 @@ export default function UsersPage() {
     return () => clearTimeout(timer)
   }, [successMessage])
 
-  const handleDelete = useCallback(async (adminCode: string) => {
-    if (!token || !deletingUser) return
-    setDeleteLoading(true)
-    setDeleteError(undefined)
+  const handleToggleStatus = useCallback(async (adminCode: string) => {
+    if (!token || !statusTarget) return
+    setStatusLoading(true)
+    setStatusError(undefined)
 
-    const result = await deleteUserAccount(token, deletingUser.userId, adminCode)
+    const result = statusTarget.isActive
+      ? await deactivateUserAccount(token, statusTarget.userId, adminCode)
+      : await activateUserAccount(token, statusTarget.userId, adminCode)
 
     if (result.ok) {
-      setDeletingUser(null)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
-      setSuccessMessage(`Conta de ${deletingUser.fullName} excluída com sucesso.`)
+      const label = statusTarget.isActive ? 'inativada' : 'ativada'
+      setStatusTarget(null)
+      setStatusLoading(false)
+      setStatusError(undefined)
+      setSuccessMessage(`Conta de ${statusTarget.fullName} ${label} com sucesso.`)
       await fetchData()
     } else if (result.status === 401) {
-      setDeleteError(result.message)
-      setDeleteLoading(false)
+      setStatusError(result.message)
+      setStatusLoading(false)
     } else {
-      setDeletingUser(null)
-      setDeleteLoading(false)
-      setDeleteError(undefined)
+      setStatusTarget(null)
+      setStatusLoading(false)
+      setStatusError(undefined)
       setSuccessMessage(result.message)
     }
-  }, [token, deletingUser, fetchData])
+  }, [token, statusTarget, fetchData])
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const isLoading = pageStatus === 'loading'
@@ -227,10 +257,10 @@ export default function UsersPage() {
         <input
           type="text"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={(e) => setSearchInput(sanitizeSearchInput(e.target.value))}
           placeholder="Buscar por nome, e-mail, CPF ou RG..."
-          disabled={isLoading}
-          className="w-full max-w-md pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          maxLength={SEARCH_MAX_LENGTH}
+          className="w-full max-w-md pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
 
@@ -250,13 +280,13 @@ export default function UsersPage() {
       )}
 
       {pageStatus === 'empty' && (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+        <div className={`rounded-lg border border-gray-200 bg-white p-12 text-center transition-opacity duration-150 ${isFetching ? 'opacity-50' : 'opacity-100'}`}>
           <p className="text-gray-500">Nenhum usuário encontrado.</p>
         </div>
       )}
 
       {pageStatus === 'loaded' && (
-        <>
+        <div className={`space-y-4 transition-opacity duration-150 ${isFetching ? 'opacity-50' : 'opacity-100'}`}>
           {/* Table */}
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <table className="min-w-full divide-y divide-gray-200">
@@ -358,22 +388,26 @@ export default function UsersPage() {
                         >
                           Selecionar
                         </button>
-                        {item.isActive && item.userId !== user?.userId && (
+                        {item.userId !== user?.userId && (
                           <button
                             onClick={() =>
-                              setDeletingUser({
+                              setStatusTarget({
                                 userId:
                                   role === 'drivers'
                                     ? (item as DriverListItem).userId
                                     : (item as PassengerListItem).userId,
                                 fullName: item.fullName,
+                                isActive: item.isActive,
                               })
                             }
                             disabled={isLoading}
-                            className="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`inline-flex items-center gap-1 rounded-lg border bg-white px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${item.isActive
+                              ? 'border-yellow-300 text-yellow-700 hover:bg-yellow-50'
+                              : 'border-green-300 text-green-700 hover:bg-green-50'
+                              }`}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Excluir
+                            <Power className="h-3.5 w-3.5" />
+                            {item.isActive ? 'Inativar' : 'Ativar'}
                           </button>
                         )}
                       </div>
@@ -410,32 +444,31 @@ export default function UsersPage() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {/* Success notification */}
       {successMessage && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          {successMessage}
-        </div>
+        <Toast message={successMessage} onClose={() => setSuccessMessage(undefined)} />
       )}
 
       {/* Confirmation Modal */}
       <ConfirmationModal
-        isOpen={deletingUser !== null}
-        title="Excluir conta"
+        isOpen={statusTarget !== null}
+        title={statusTarget?.isActive ? 'Inativar conta' : 'Ativar conta'}
         description={
-          deletingUser
-            ? `Tem certeza que deseja excluir a conta de ${deletingUser.fullName}? Esta ação é irreversível.`
+          statusTarget
+            ? statusTarget.isActive
+              ? `Digite seu código de administrador para inativar a conta de ${statusTarget.fullName}. Você pode reativá-la depois.`
+              : `Digite seu código de administrador para reativar a conta de ${statusTarget.fullName}.`
             : ''
         }
-        onConfirm={handleDelete}
+        onConfirm={handleToggleStatus}
         onCancel={() => {
-          setDeletingUser(null)
-          setDeleteError(undefined)
+          setStatusTarget(null)
+          setStatusError(undefined)
         }}
-        loading={deleteLoading}
-        error={deleteError}
+        loading={statusLoading}
+        error={statusError}
       />
     </div>
   )

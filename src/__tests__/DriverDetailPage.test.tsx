@@ -1,28 +1,20 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
 import DriverDetailPage from '../pages/DriverDetailPage'
-import { fetchDriverProfile, changeDriverVehicle } from '../api/userApi'
-import { fetchAvailableVehicles } from '../api/vehicleApi'
+import { fetchDriverProfile } from '../api/userApi'
 
 vi.mock('../api/userApi', () => ({
   fetchDriverProfile: vi.fn(),
-  changeDriverVehicle: vi.fn(),
   fetchUserProfilePhoto: vi.fn().mockResolvedValue({
     ok: true,
     data: { photoUrl: null },
   }),
 }))
 
-vi.mock('../api/vehicleApi', () => ({
-  fetchAvailableVehicles: vi.fn(),
-}))
-
 const mockedFetchProfile = vi.mocked(fetchDriverProfile)
-const mockedChangeVehicle = vi.mocked(changeDriverVehicle)
-const mockedFetchVehicles = vi.mocked(fetchAvailableVehicles)
 
 const driverData = {
   id: 'driver-1',
@@ -39,18 +31,6 @@ const driverData = {
     plate: 'ABC-1234',
   },
 }
-
-const availableVehicles = [
-  {
-    vehicleId: 'v-002',
-    brand: 'Honda',
-    model: 'Civic',
-    year: 2023,
-    plate: 'DEF-5678',
-    categoryId: 'cat-2',
-    categoryTitle: 'Categoria B',
-  },
-]
 
 function renderPage(userId = 'driver-user-1') {
   sessionStorage.setItem('moto_admin_token', 'valid-token')
@@ -78,7 +58,6 @@ describe('DriverDetailPage', () => {
 
   it('shows loading skeleton initially', () => {
     mockedFetchProfile.mockReturnValue(new Promise(() => {}))
-    mockedFetchVehicles.mockReturnValue(new Promise(() => {}))
     renderPage()
     const skeletonDivs = document.querySelectorAll('.animate-pulse')
     expect(skeletonDivs.length).toBeGreaterThan(0)
@@ -86,7 +65,6 @@ describe('DriverDetailPage', () => {
 
   it('shows driver details when loaded', async () => {
     mockedFetchProfile.mockResolvedValue({ ok: true, data: driverData })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: availableVehicles })
     renderPage()
 
     await waitFor(() => {
@@ -98,7 +76,6 @@ describe('DriverDetailPage', () => {
 
   it('shows current vehicle details', async () => {
     mockedFetchProfile.mockResolvedValue({ ok: true, data: driverData })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: availableVehicles })
     renderPage()
 
     await waitFor(() => {
@@ -117,7 +94,6 @@ describe('DriverDetailPage', () => {
       ok: true,
       data: { ...driverData, vehicle: null },
     })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: availableVehicles })
     renderPage()
 
     await waitFor(() => {
@@ -131,7 +107,6 @@ describe('DriverDetailPage', () => {
       status: 404,
       message: 'Motorista não encontrado.',
     })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: [] })
     renderPage()
 
     await waitFor(() => {
@@ -145,7 +120,6 @@ describe('DriverDetailPage', () => {
       status: 500,
       message: 'Erro ao carregar perfil do motorista. Tente novamente.',
     })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: [] })
     renderPage()
 
     await waitFor(() => {
@@ -156,82 +130,8 @@ describe('DriverDetailPage', () => {
     expect(screen.getByText('Tentar novamente')).toBeInTheDocument()
   })
 
-  it('calls changeDriverVehicle when switching vehicle', async () => {
-    // Setup initial load
-    mockedFetchProfile.mockResolvedValue({ ok: true, data: driverData })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: availableVehicles })
-    mockedChangeVehicle.mockResolvedValue({
-      ok: true,
-      data: {
-        vehicleId: 'v-002',
-        brand: 'Honda',
-        model: 'Civic',
-        year: 2023,
-        plate: 'DEF-5678',
-      },
-    })
-
-    const user = userEvent.setup()
-    renderPage()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('João Motorista')
-    })
-
-    // Select the new vehicle
-    fireEvent.change(screen.getByLabelText('Veículo disponível'), {
-      target: { value: 'v-002' },
-    })
-
-    await user.click(screen.getByRole('button', { name: 'Alterar veículo' }))
-
-    await waitFor(() => {
-      expect(mockedChangeVehicle).toHaveBeenCalledWith('valid-token', 'driver-user-1', 'v-002')
-    })
-  })
-
-  it('shows error when vehicle switch fails', async () => {
-    mockedFetchProfile.mockResolvedValue({ ok: true, data: driverData })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: availableVehicles })
-    mockedChangeVehicle.mockResolvedValue({
-      ok: false,
-      status: 409,
-      message: 'Este veículo já está associado a outro motorista.',
-    })
-
-    const user = userEvent.setup()
-    renderPage()
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('João Motorista')
-    })
-
-    fireEvent.change(screen.getByLabelText('Veículo disponível'), {
-      target: { value: 'v-002' },
-    })
-
-    await user.click(screen.getByRole('button', { name: 'Alterar veículo' }))
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Este veículo já está associado a outro motorista.'),
-      ).toBeInTheDocument()
-    })
-  })
-
-  it('shows no available vehicles message when list is empty', async () => {
-    mockedFetchProfile.mockResolvedValue({ ok: true, data: driverData })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: [] })
-    renderPage()
-
-    await waitFor(() => {
-      expect(screen.getByText('Nenhum veículo disponível no momento.')).toBeInTheDocument()
-    })
-  })
-
   it('navigates back to users list on back button click', async () => {
     mockedFetchProfile.mockResolvedValue({ ok: true, data: driverData })
-    mockedFetchVehicles.mockResolvedValue({ ok: true, data: availableVehicles })
     const user = userEvent.setup()
     renderPage()
 
