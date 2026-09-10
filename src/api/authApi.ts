@@ -5,6 +5,8 @@ export interface SignInRequest {
   password: string
 }
 
+const EXPECTED_ROLE = 'GlobalAdmin'
+
 export interface SignInResponse {
   accessToken: string
   expiresAt: string
@@ -33,7 +35,7 @@ export async function signIn(req: SignInRequest): Promise<SignInResult> {
     const res = await fetch(`${BASE_URL}/api/auth/sign-in`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req),
+      body: JSON.stringify({ ...req, expectedRole: EXPECTED_ROLE }),
     })
 
     if (res.ok) {
@@ -97,6 +99,7 @@ async function extractMessage(res: Response): Promise<string> {
   switch (res.status) {
     case 400: return 'Dados inválidos. Verifique os campos e tente novamente.'
     case 401: return 'E-mail ou senha inválidos.'
+    case 403: return 'Esta conta não tem permissão para acessar o painel.'
     case 409: return 'O código já foi utilizado.'
     case 429: return 'Muitas tentativas. Aguarde um momento e tente novamente.'
     default:  return 'Ocorreu um erro inesperado. Tente novamente mais tarde.'
