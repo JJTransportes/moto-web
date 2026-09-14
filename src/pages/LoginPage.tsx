@@ -104,7 +104,7 @@ export default function LoginPage() {
             Esqueci minha senha
           </button>
         </div>
-        <AppButton type="submit" loading={loading} disabled={loading}>
+        <AppButton type="submit" loading={loading} disabled={loading || !email.trim() || !password}>
           Entrar
         </AppButton>
       </form>

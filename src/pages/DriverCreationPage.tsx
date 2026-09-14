@@ -3,8 +3,10 @@ import { createDriver, type CreateDriverRequest } from '../api/userApi'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
+import PasswordRequirements from '../components/PasswordRequirements'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
 import {
+  isPasswordValid,
   validateBirthdate,
   validateCnh,
   validateCpf,
@@ -122,9 +124,7 @@ export default function DriverCreationPage() {
     form.vehicleId.trim() !== '' &&
     form.email.trim() !== '' &&
     form.email.length <= 100 &&
-    form.initialPassword.trim() !== '' &&
-    form.initialPassword.length >= 8 &&
-    form.initialPassword.length <= 72
+    isPasswordValid(form.initialPassword)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -253,6 +253,7 @@ export default function DriverCreationPage() {
           <div className="grid grid-cols-1 gap-4">
             <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="email@exemplo.com" softMaxLength={100} />
             <FormField id="initialPassword" label="Senha inicial" required type="password" value={form.initialPassword} onChange={set('initialPassword')} error={errors.initialPassword} placeholder="Senha inicial" softMaxLength={72} />
+            <PasswordRequirements password={form.initialPassword} />
           </div>
         </div>
 

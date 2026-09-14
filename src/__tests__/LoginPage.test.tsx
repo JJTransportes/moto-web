@@ -38,13 +38,18 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: /esqueci minha senha/i })).toBeInTheDocument()
   })
 
-  it('shows validation error when submitting empty form', async () => {
+  it('keeps sign-in button disabled until email and password are filled', async () => {
     const user = userEvent.setup()
     renderLoginPage()
 
-    await user.click(screen.getByRole('button', { name: /entrar/i }))
+    const button = screen.getByRole('button', { name: /entrar/i })
+    expect(button).toBeDisabled()
 
-    expect(screen.getByText(/preencha o e-mail/i)).toBeInTheDocument()
+    await user.type(screen.getByPlaceholderText('E-mail'), 'user@example.com')
+    expect(button).toBeDisabled()
+
+    await user.type(screen.getByPlaceholderText('Senha'), 'secret123')
+    expect(button).toBeEnabled()
   })
 
   it('shows validation error for invalid email format', async () => {
@@ -58,14 +63,13 @@ describe('LoginPage', () => {
     expect(screen.getByText(/e-mail inválido/i)).toBeInTheDocument()
   })
 
-  it('shows validation error when password is empty', async () => {
+  it('keeps sign-in button disabled when password is empty', async () => {
     const user = userEvent.setup()
     renderLoginPage()
 
     await user.type(screen.getByPlaceholderText('E-mail'), 'user@example.com')
-    await user.click(screen.getByRole('button', { name: /entrar/i }))
 
-    expect(screen.getByText(/preencha a senha/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /entrar/i })).toBeDisabled()
   })
 
   it('calls sign-in API with trimmed email and password', async () => {
