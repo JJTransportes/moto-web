@@ -39,5 +39,5 @@ export async function createCategory(token: string, input: CreateCategoryInput):
     body: JSON.stringify(input),
   })
   if (result.ok) return { ok: true, data: result.data }
-  return { ok: false, status: result.status, message: 'Erro ao criar categoria. Tente novamente.' }
+  return { ok: false, status: result.status, message: result.apiMessage ?? 'Erro ao criar categoria. Tente novamente.' }
 }
