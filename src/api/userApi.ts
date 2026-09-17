@@ -191,9 +191,12 @@ export interface CreateDriverRequest {
   vehicleId: string
 }
 
+const DUPLICATE_FIELDS = ['email', 'cpf', 'cnh', 'rg', 'registration'] as const
+export type DuplicateField = (typeof DUPLICATE_FIELDS)[number]
+
 export type UserCreationResult =
   | { ok: true; userId: string }
-  | { ok: false; status: number; message: string }
+  | { ok: false; status: number; message: string; field?: DuplicateField }
 
 async function createUser<TBody>(
   endpoint: string,
@@ -205,13 +208,19 @@ async function createUser<TBody>(
     body: JSON.stringify(body),
   })
   if (result.ok) return { ok: true, userId: result.data.userId }
+
+  const field = result.status === 409 && DUPLICATE_FIELDS.includes(result.apiField as DuplicateField)
+    ? (result.apiField as DuplicateField)
+    : undefined
+
   return {
     ok: false,
     status: result.status,
+    field,
     message: result.status === 401
       ? 'Código do administrador inválido.'
       : result.status === 409
-        ? 'Dados duplicados. Verifique CPF, e-mail ou CNH.'
+        ? (result.apiMessage ?? 'Dados duplicados. Verifique CPF, e-mail, CNH, RG ou matrícula.')
         : 'Erro ao criar usuário. Tente novamente.',
   }
 }

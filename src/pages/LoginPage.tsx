@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import FormField from '../components/FormField'
 import AppButton from '../components/AppButton'
 import { useAuth } from '../auth/AuthContext'
 import { signIn } from '../api/authApi'
+import { useServerErrorGuard } from '../hooks/useServerErrorGuard'
 import styles from './LoginPage.module.css'
 
 interface FormErrors {
@@ -34,6 +35,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [errors, setErrors]     = useState<FormErrors>({})
   const [loading, setLoading]   = useState(false)
+  const serverGuard = useServerErrorGuard()
+
+  useEffect(() => {
+    if (!serverGuard.isBlocked) {
+      setErrors(prev => (prev.general ? { ...prev, general: undefined } : prev))
+    }
+  }, [serverGuard.isBlocked])
+
+  function handleEmailChange(value: string) {
+    setEmail(value)
+    serverGuard.onFieldChange('email', value)
+  }
+
+  function handlePasswordChange(value: string) {
+    setPassword(value)
+    serverGuard.onFieldChange('password', value)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,6 +76,7 @@ export default function LoginPage() {
         navigate('/', { replace: true })
       } else {
         setErrors({ general: result.message })
+        serverGuard.block(['email', 'password'], { email, password }, result.message)
       }
     } finally {
       setLoading(false)
@@ -77,8 +96,8 @@ export default function LoginPage() {
             type="email"
             placeholder="E-mail"
             value={email}
-            onChange={setEmail}
-            error={errors.email}
+            onChange={handleEmailChange}
+            error={errors.email ?? serverGuard.errorFor('email')}
             disabled={loading}
           />
           <FormField
@@ -86,8 +105,8 @@ export default function LoginPage() {
             type="password"
             placeholder="Senha"
             value={password}
-            onChange={setPassword}
-            error={errors.password}
+            onChange={handlePasswordChange}
+            error={errors.password ?? serverGuard.errorFor('password')}
             disabled={loading}
           />
           {errors.general && (
@@ -104,7 +123,11 @@ export default function LoginPage() {
             Esqueci minha senha
           </button>
         </div>
-        <AppButton type="submit" loading={loading} disabled={loading || !email.trim() || !password}>
+        <AppButton
+          type="submit"
+          loading={loading}
+          disabled={loading || !email.trim() || !password || serverGuard.isBlocked}
+        >
           Entrar
         </AppButton>
       </form>

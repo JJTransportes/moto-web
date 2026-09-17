@@ -7,6 +7,7 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
 import { validateMaxLength, validateRequired, validateSafeText } from '../utils/validators'
 import { maskCep, maskCountryCode, maskUf, validateUf } from '../utils/masks'
+import { useServerErrorGuard } from '../hooks/useServerErrorGuard'
 
 interface FormValues {
   name: string
@@ -51,6 +52,7 @@ export default function PartitionCreationPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
+  const serverGuard = useServerErrorGuard()
 
   useEffect(() => {
     if (!token) return
@@ -66,8 +68,10 @@ export default function PartitionCreationPage() {
     })
   }, [token])
 
-  const set = (field: Exclude<keyof FormValues, 'categoryIds'>) => (value: string) =>
+  const set = (field: Exclude<keyof FormValues, 'categoryIds'>) => (value: string) => {
     setForm(f => ({ ...f, [field]: value }))
+    serverGuard.onFieldChange(field, value)
+  }
 
   const isAddDepartmentEnabled =
     form.name.trim() !== '' &&
@@ -171,6 +175,11 @@ export default function PartitionCreationPage() {
     if (result.ok) {
       setIsModalOpen(false)
       navigate(`/partitions/${result.data.partitionId}`)
+    } else if (result.field) {
+      const field = result.field
+      setIsModalOpen(false)
+      setErrors(e => ({ ...e, [field]: result.message }))
+      serverGuard.block(field, { [field]: form[field] }, result.message)
     } else {
       setModalError(result.message)
     }
@@ -193,8 +202,8 @@ export default function PartitionCreationPage() {
             <div className="col-span-2">
               <FormField id="name" label="Nome" required value={form.name} onChange={set('name')} error={errors.name} placeholder="Nome da unidade" softMaxLength={100} />
             </div>
-            <FormField id="identifier" label="Identificador" required value={form.identifier} onChange={set('identifier')} error={errors.identifier} placeholder="Ex: SMTT" softMaxLength={30} />
-            <FormField id="acronym" label="Sigla" required value={form.acronym} onChange={set('acronym')} error={errors.acronym} placeholder="Ex: SMTT" softMaxLength={10} />
+            <FormField id="identifier" label="Identificador" required value={form.identifier} onChange={set('identifier')} error={errors.identifier ?? serverGuard.errorFor('identifier')} placeholder="Ex: SMTT" softMaxLength={30} />
+            <FormField id="acronym" label="Sigla" required value={form.acronym} onChange={set('acronym')} error={errors.acronym ?? serverGuard.errorFor('acronym')} placeholder="Ex: SMTT" softMaxLength={10} />
             <div className="col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">Departamentos<span className="text-red-500" aria-hidden="true"> *</span></label>
               <div className="flex gap-2">
@@ -302,7 +311,7 @@ export default function PartitionCreationPage() {
           </button>
           <button
             type="submit"
-            disabled={categoriesError || !isFormComplete}
+            disabled={categoriesError || !isFormComplete || serverGuard.isBlocked}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             Criar Unidade

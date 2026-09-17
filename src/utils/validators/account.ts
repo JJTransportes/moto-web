@@ -30,3 +30,15 @@ export function validatePassword(password: string): string | undefined {
   }
   return undefined
 }
+
+export function validateConfirmEmail(email: string, confirmEmail: string): string | undefined {
+  if (!confirmEmail.trim()) return 'Confirme o e-mail.'
+  if (email.trim() !== confirmEmail.trim()) return 'Os e-mails não coincidem.'
+  return undefined
+}
+
+export function validateConfirmPassword(password: string, confirmPassword: string): string | undefined {
+  if (!confirmPassword) return 'Confirme a senha.'
+  if (password !== confirmPassword) return 'Senhas não coincidem.'
+  return undefined
+}

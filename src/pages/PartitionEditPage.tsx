@@ -7,6 +7,7 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
 import { validateMaxLength, validateRequired, validateSafeText } from '../utils/validators'
 import { maskCep, maskCountryCode, maskUf, validateUf } from '../utils/masks'
+import { useServerErrorGuard } from '../hooks/useServerErrorGuard'
 
 interface FormValues {
   name: string
@@ -64,6 +65,7 @@ export default function PartitionEditPage() {
   const [saveModalOpen, setSaveModalOpen] = useState(false)
   const [saveLoading, setSaveLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | undefined>()
+  const serverGuard = useServerErrorGuard()
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -110,8 +112,10 @@ export default function PartitionEditPage() {
     )
   }
 
-  const set = (field: keyof FormValues) => (value: string) =>
+  const set = (field: keyof FormValues) => (value: string) => {
     setForm(f => f ? { ...f, [field]: value } : f)
+    serverGuard.onFieldChange(field, value)
+  }
 
   const isAddDepartmentEnabled =
     form.name.trim() !== '' &&
@@ -221,6 +225,11 @@ export default function PartitionEditPage() {
     if (result.ok) {
       setSaveModalOpen(false)
       navigate(`/partitions/${partitionId}`)
+    } else if (result.field) {
+      const field = result.field
+      setSaveModalOpen(false)
+      setErrors(e => ({ ...e, [field]: result.message }))
+      serverGuard.block(field, { [field]: form[field] }, result.message)
     } else {
       setSaveError(result.message)
     }
@@ -271,8 +280,8 @@ export default function PartitionEditPage() {
             <div className="col-span-2">
               <FormField id="name" label="Nome" required value={form.name} onChange={set('name')} error={errors.name} placeholder="Nome da unidade" softMaxLength={100} />
             </div>
-            <FormField id="identifier" label="Identificador" required value={form.identifier} onChange={set('identifier')} error={errors.identifier} placeholder="Ex: SMTT" softMaxLength={30} />
-            <FormField id="acronym" label="Sigla" required value={form.acronym} onChange={set('acronym')} error={errors.acronym} placeholder="Ex: SMTT" softMaxLength={10} />
+            <FormField id="identifier" label="Identificador" required value={form.identifier} onChange={set('identifier')} error={errors.identifier ?? serverGuard.errorFor('identifier')} placeholder="Ex: SMTT" softMaxLength={30} />
+            <FormField id="acronym" label="Sigla" required value={form.acronym} onChange={set('acronym')} error={errors.acronym ?? serverGuard.errorFor('acronym')} placeholder="Ex: SMTT" softMaxLength={10} />
             <div className="col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">Departamentos<span className="text-red-500" aria-hidden="true"> *</span></label>
               <div className="flex gap-2">
@@ -397,7 +406,7 @@ export default function PartitionEditPage() {
           </button>
           <button
             type="submit"
-            disabled={saveLoading || !isFormComplete}
+            disabled={saveLoading || !isFormComplete || serverGuard.isBlocked}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             Salvar Alterações

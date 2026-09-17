@@ -153,7 +153,7 @@ export async function fetchProtected<T>(
   url: string,
   token: string,
   options: RequestInit = {},
-): Promise<{ ok: true; data: T } | { ok: false; status: number; apiMessage?: string }> {
+): Promise<{ ok: true; data: T } | { ok: false; status: number; apiMessage?: string; apiField?: string }> {
   try {
     const res = await fetch(`${BASE_URL}${url}`, {
       ...options,
@@ -169,11 +169,13 @@ export async function fetchProtected<T>(
       return { ok: true, data }
     }
     let apiMessage: string | undefined
+    let apiField: string | undefined
     try {
       const body = await res.json()
       if (body && typeof body.error === 'string') apiMessage = body.error
+      if (body && typeof body.field === 'string') apiField = body.field
     } catch { /* body wasn't JSON or was empty — no apiMessage */ }
-    return { ok: false, status: res.status, apiMessage }
+    return { ok: false, status: res.status, apiMessage, apiField }
   } catch {
     return { ok: false, status: 0 }
   }

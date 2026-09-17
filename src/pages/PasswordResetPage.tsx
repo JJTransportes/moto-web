@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AuthCard from '../components/AuthCard'
 import FormField from '../components/FormField'
@@ -6,6 +6,7 @@ import AppButton from '../components/AppButton'
 import PasswordRequirements from '../components/PasswordRequirements'
 import { requestPasswordReset, verifyResetCode, confirmPasswordReset } from '../api/authApi'
 import { isPasswordValid, validatePassword } from '../utils/validators'
+import { useServerErrorGuard } from '../hooks/useServerErrorGuard'
 import styles from './PasswordResetPage.module.css'
 
 type Step = 'request' | 'verify' | 'newPassword' | 'success'
@@ -62,17 +63,47 @@ export default function PasswordResetPage() {
   // Request step state
   const [confirmEmail, setConfirmEmail] = useState('')
   const [reqErrors, setReqErrors]       = useState<RequestErrors>({})
+  const requestGuard = useServerErrorGuard()
 
   // Verify-code step state
   const [code, setCode]                     = useState('')
   const [verifyErrors, setVerifyErrors]     = useState<VerifyErrors>({})
   const [failedAttempts, setFailedAttempts] = useState(0)
+  const verifyGuard = useServerErrorGuard()
 
   // New-password step state
   const [resetToken, setResetToken]           = useState('')
   const [newPassword, setNewPassword]         = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [npErrors, setNpErrors]               = useState<NewPasswordErrors>({})
+  const npGuard = useServerErrorGuard()
+
+  function handleEmailChange(value: string) {
+    setEmail(value)
+    requestGuard.onFieldChange('email', value)
+  }
+
+  function handleCodeChange(value: string) {
+    setCode(value)
+    verifyGuard.onFieldChange('code', value)
+  }
+
+  function handleNewPasswordChange(value: string) {
+    setNewPassword(value)
+    npGuard.onFieldChange('newPassword', value)
+  }
+
+  useEffect(() => {
+    if (!requestGuard.isBlocked) setReqErrors(prev => (prev.general ? { ...prev, general: undefined } : prev))
+  }, [requestGuard.isBlocked])
+
+  useEffect(() => {
+    if (!verifyGuard.isBlocked) setVerifyErrors(prev => (prev.general ? { ...prev, general: undefined } : prev))
+  }, [verifyGuard.isBlocked])
+
+  useEffect(() => {
+    if (!npGuard.isBlocked) setNpErrors(prev => (prev.general ? { ...prev, general: undefined } : prev))
+  }, [npGuard.isBlocked])
 
   async function handleRequestSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -88,6 +119,7 @@ export default function PasswordResetPage() {
         setStep('verify')
       } else {
         setReqErrors({ general: result.message })
+        requestGuard.block('email', { email }, result.message)
       }
     } finally {
       setLoading(false)
@@ -115,7 +147,9 @@ export default function PasswordResetPage() {
           attempts >= ATTEMPT_WARNING_THRESHOLD && remaining > 0
             ? ` Restam ${remaining} tentativa${remaining === 1 ? '' : 's'} antes de precisar pedir um novo código.`
             : ''
-        setVerifyErrors({ general: `${result.message}${warning}` })
+        const message = `${result.message}${warning}`
+        setVerifyErrors({ general: message })
+        verifyGuard.block('code', { code }, message)
       }
     } finally {
       setLoading(false)
@@ -126,10 +160,14 @@ export default function PasswordResetPage() {
     setCode('')
     setVerifyErrors({})
     setFailedAttempts(0)
+    verifyGuard.clear()
     setLoading(true)
     try {
       const result = await requestPasswordReset(email.trim())
-      if (!result.ok) setVerifyErrors({ general: result.message })
+      if (!result.ok) {
+        setVerifyErrors({ general: result.message })
+        verifyGuard.block('code', { code: '' }, result.message)
+      }
     } finally {
       setLoading(false)
     }
@@ -148,11 +186,12 @@ export default function PasswordResetPage() {
         setStep('success')
       } else if (result.status === 400 || result.status === 409) {
         // Token expirado, inválido ou já usado — precisa pedir o código de novo.
-        setNpErrors({
-          general: `${result.message} Solicite um novo código para continuar.`,
-        })
+        const message = `${result.message} Solicite um novo código para continuar.`
+        setNpErrors({ general: message })
+        npGuard.block('newPassword', { newPassword }, message)
       } else {
         setNpErrors({ general: result.message })
+        npGuard.block('newPassword', { newPassword }, result.message)
       }
     } finally {
       setLoading(false)
@@ -182,8 +221,8 @@ export default function PasswordResetPage() {
               type="password"
               placeholder="Nova Senha"
               value={newPassword}
-              onChange={setNewPassword}
-              error={npErrors.newPassword}
+              onChange={handleNewPasswordChange}
+              error={npErrors.newPassword ?? npGuard.errorFor('newPassword')}
               disabled={loading}
             />
             <PasswordRequirements password={newPassword} />
@@ -202,7 +241,11 @@ export default function PasswordResetPage() {
               </p>
             )}
           </div>
-          <AppButton type="submit" loading={loading} disabled={loading || !isPasswordValid(newPassword)}>
+          <AppButton
+            type="submit"
+            loading={loading}
+            disabled={loading || !isPasswordValid(newPassword) || npGuard.isBlocked}
+          >
             Confirmar
           </AppButton>
         </form>
@@ -219,8 +262,8 @@ export default function PasswordResetPage() {
               id="code"
               placeholder="Código de Verificação"
               value={code}
-              onChange={setCode}
-              error={verifyErrors.code}
+              onChange={handleCodeChange}
+              error={verifyErrors.code ?? verifyGuard.errorFor('code')}
               disabled={loading}
             />
             {verifyErrors.general && (
@@ -237,7 +280,7 @@ export default function PasswordResetPage() {
               Pedir um novo código
             </button>
           </div>
-          <AppButton type="submit" loading={loading} disabled={loading}>
+          <AppButton type="submit" loading={loading} disabled={loading || verifyGuard.isBlocked}>
             Confirmar Código
           </AppButton>
         </form>
@@ -254,8 +297,8 @@ export default function PasswordResetPage() {
             type="email"
             placeholder="E-mail"
             value={email}
-            onChange={setEmail}
-            error={reqErrors.email}
+            onChange={handleEmailChange}
+            error={reqErrors.email ?? requestGuard.errorFor('email')}
             required
             disabled={loading}
           />
@@ -278,7 +321,7 @@ export default function PasswordResetPage() {
         <AppButton
           type="submit"
           loading={loading}
-          disabled={loading || !email.trim() || !confirmEmail.trim()}
+          disabled={loading || !email.trim() || !confirmEmail.trim() || requestGuard.isBlocked}
         >
           Enviar Código
         </AppButton>
