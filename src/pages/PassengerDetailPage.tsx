@@ -88,11 +88,12 @@ export default function PassengerDetailPage() {
       setPriorityEnabled(result.data.priorityTravelsEnabled)
       setPageStatus('loaded')
 
-      // Use photoUrl from profile if available, otherwise fetch separately
+      // Use photoUrl from profile if available, otherwise fetch separately.
+      // /api/users/{userId}/profile expects the users.user_id, not the passenger_id.
       if (result.data.photoUrl) {
         setPhotoUrl(result.data.photoUrl)
       } else {
-        const photoResult = await fetchUserProfilePhoto(token, passengerId)
+        const photoResult = await fetchUserProfilePhoto(token, result.data.userId)
         if (photoResult.ok) {
           setPhotoUrl(photoResult.data.photoUrl)
         }

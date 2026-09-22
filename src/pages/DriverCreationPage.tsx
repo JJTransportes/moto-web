@@ -3,12 +3,16 @@ import { createDriver, type CreateDriverRequest } from '../api/userApi'
 import { useAuth } from '../auth/AuthContext'
 import ConfirmationModal from '../components/ConfirmationModal'
 import FormField from '../components/FormField'
+import PasswordRequirements from '../components/PasswordRequirements'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
 import {
+  isPasswordValid,
   validateBirthdate,
   validateCnh,
   validateCpf,
   validateEmail,
+  validateConfirmEmail,
+  validateConfirmPassword,
   validateFullName,
   validateMaxLength,
   validatePassword,
@@ -17,6 +21,7 @@ import {
   validateSafeText
 } from '../utils/validators'
 import { maskCnh, maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
+import { useServerErrorGuard } from '../hooks/useServerErrorGuard'
 
 interface FormValues {
   fullName: string
@@ -30,7 +35,9 @@ interface FormValues {
   state: string
   vehicleId: string
   email: string
+  confirmEmail: string
   initialPassword: string
+  confirmPassword: string
 }
 
 const emptyForm: FormValues = {
@@ -45,7 +52,9 @@ const emptyForm: FormValues = {
   state: '',
   vehicleId: '',
   email: '',
+  confirmEmail: '',
   initialPassword: '',
+  confirmPassword: '',
 }
 
 interface FormErrors {
@@ -60,7 +69,9 @@ interface FormErrors {
   state?: string
   vehicleId?: string
   email?: string
+  confirmEmail?: string
   initialPassword?: string
+  confirmPassword?: string
 }
 
 export default function DriverCreationPage() {
@@ -73,6 +84,7 @@ export default function DriverCreationPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
   const [success, setSuccess] = useState(false)
+  const serverGuard = useServerErrorGuard()
 
   useEffect(() => {
     if (!token) return
@@ -83,8 +95,10 @@ export default function DriverCreationPage() {
     })
   }, [token])
 
-  const set = (field: keyof FormValues) => (value: string) =>
+  const set = (field: keyof FormValues) => (value: string) => {
     setForm(f => ({ ...f, [field]: value }))
+    serverGuard.onFieldChange(field, value)
+  }
 
   function validate(): boolean {
     const e: FormErrors = {}
@@ -99,7 +113,9 @@ export default function DriverCreationPage() {
     e.state = validateUf(form.state)
     e.vehicleId = validateRequired(form.vehicleId, 'Veículo')
     e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
+    e.confirmEmail = validateConfirmEmail(form.email, form.confirmEmail)
     e.initialPassword = validatePassword(form.initialPassword)
+    e.confirmPassword = validateConfirmPassword(form.initialPassword, form.confirmPassword)
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
@@ -122,9 +138,11 @@ export default function DriverCreationPage() {
     form.vehicleId.trim() !== '' &&
     form.email.trim() !== '' &&
     form.email.length <= 100 &&
-    form.initialPassword.trim() !== '' &&
-    form.initialPassword.length >= 8 &&
-    form.initialPassword.length <= 72
+    form.confirmEmail.trim() !== '' &&
+    form.email.trim() === form.confirmEmail.trim() &&
+    isPasswordValid(form.initialPassword) &&
+    form.confirmPassword !== '' &&
+    form.initialPassword === form.confirmPassword
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -164,7 +182,14 @@ export default function DriverCreationPage() {
       setForm(emptyForm)
       setErrors({})
     } else {
-      setModalError(result.message)
+      const field = result.field
+      if (field) {
+        setIsModalOpen(false)
+        setErrors(e => ({ ...e, [field]: result.message }))
+        serverGuard.block(field, { [field]: form[field as keyof FormValues] }, result.message)
+      } else {
+        setModalError(result.message)
+      }
     }
   }
 
@@ -200,10 +225,10 @@ export default function DriverCreationPage() {
             <div className="col-span-2">
               <FormField id="fullName" label="Nome completo" required value={form.fullName} onChange={set('fullName')} error={errors.fullName} placeholder="Nome completo" softMaxLength={100} />
             </div>
-            <FormField id="cpf" label="CPF" required value={form.cpf} onChange={set('cpf')} error={errors.cpf} placeholder="000.000.000-00" maxLength={14} mask={maskCpf} />
-            <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
-            <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
-            <FormField id="cnh" label="CNH" required value={form.cnh} onChange={set('cnh')} error={errors.cnh} placeholder="CNH" maxLength={11} mask={maskCnh} digitsOnly />
+            <FormField id="cpf" label="CPF" required value={form.cpf} onChange={set('cpf')} error={errors.cpf ?? serverGuard.errorFor('cpf')} placeholder="000.000.000-00" maxLength={14} mask={maskCpf} />
+            <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg ?? serverGuard.errorFor('rg')} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
+            <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration ?? serverGuard.errorFor('registration')} placeholder="Matrícula" softMaxLength={30} />
+            <FormField id="cnh" label="CNH" required value={form.cnh} onChange={set('cnh')} error={errors.cnh ?? serverGuard.errorFor('cnh')} placeholder="CNH" maxLength={11} mask={maskCnh} digitsOnly />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
           </div>
         </div>
@@ -251,14 +276,17 @@ export default function DriverCreationPage() {
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-base font-semibold text-gray-700">Credenciais de acesso</h2>
           <div className="grid grid-cols-1 gap-4">
-            <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="email@exemplo.com" softMaxLength={100} />
+            <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email ?? serverGuard.errorFor('email')} placeholder="email@exemplo.com" softMaxLength={100} />
+            <FormField id="confirmEmail" label="Confirmar e-mail" required type="email" value={form.confirmEmail} onChange={set('confirmEmail')} error={errors.confirmEmail} placeholder="Confirme o e-mail" softMaxLength={100} />
             <FormField id="initialPassword" label="Senha inicial" required type="password" value={form.initialPassword} onChange={set('initialPassword')} error={errors.initialPassword} placeholder="Senha inicial" softMaxLength={72} />
+            <PasswordRequirements password={form.initialPassword} />
+            <FormField id="confirmPassword" label="Confirmar senha" required type="password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} placeholder="Confirme a senha" softMaxLength={72} />
           </div>
         </div>
 
         <button
           type="submit"
-          disabled={vehicles.length === 0 || !isFormComplete}
+          disabled={vehicles.length === 0 || !isFormComplete || serverGuard.isBlocked}
           className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Criar Motorista

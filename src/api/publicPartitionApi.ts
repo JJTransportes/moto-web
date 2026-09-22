@@ -82,13 +82,16 @@ export type GetPartitionResult =
   | { ok: true; data: PublicPartitionDetail }
   | { ok: false; status: number; message: string }
 
+const DUPLICATE_PARTITION_FIELDS = ['identifier', 'acronym'] as const
+export type DuplicatePartitionField = (typeof DUPLICATE_PARTITION_FIELDS)[number]
+
 export type CreatePartitionResult =
   | { ok: true; data: PublicPartitionDetail }
-  | { ok: false; status: number; message: string }
+  | { ok: false; status: number; message: string; field?: DuplicatePartitionField }
 
 export type UpdatePartitionResult =
   | { ok: true; data: PublicPartitionDetail }
-  | { ok: false; status: number; message: string }
+  | { ok: false; status: number; message: string; field?: DuplicatePartitionField }
 
 export type DeletePartitionResult =
   | { ok: true }
@@ -113,7 +116,15 @@ export async function createPartition(token: string, input: CreatePartitionInput
     body: JSON.stringify(input),
   })
   if (result.ok) return { ok: true, data: result.data }
-  return { ok: false, status: result.status, message: 'Erro ao criar unidade. Tente novamente.' }
+  const field = result.status === 409 && DUPLICATE_PARTITION_FIELDS.includes(result.apiField as DuplicatePartitionField)
+    ? (result.apiField as DuplicatePartitionField)
+    : undefined
+  return {
+    ok: false,
+    status: result.status,
+    field,
+    message: result.apiMessage ?? 'Erro ao criar unidade. Tente novamente.',
+  }
 }
 
 export async function updatePartition(token: string, partitionId: string, input: UpdatePartitionInput): Promise<UpdatePartitionResult> {
@@ -123,7 +134,15 @@ export async function updatePartition(token: string, partitionId: string, input:
     body: JSON.stringify(input),
   })
   if (result.ok) return { ok: true, data: result.data }
-  return { ok: false, status: result.status, message: 'Erro ao atualizar unidade. Tente novamente.' }
+  const field = result.status === 409 && DUPLICATE_PARTITION_FIELDS.includes(result.apiField as DuplicatePartitionField)
+    ? (result.apiField as DuplicatePartitionField)
+    : undefined
+  return {
+    ok: false,
+    status: result.status,
+    field,
+    message: result.apiMessage ?? 'Erro ao atualizar unidade. Tente novamente.',
+  }
 }
 
 export async function deletePartition(token: string, partitionId: string): Promise<DeletePartitionResult> {
@@ -131,7 +150,7 @@ export async function deletePartition(token: string, partitionId: string): Promi
     method: 'DELETE',
   })
   if (result.ok) return { ok: true }
-  return { ok: false, status: result.status, message: 'Erro ao excluir unidade. Tente novamente.' }
+  return { ok: false, status: result.status, message: result.apiMessage ?? 'Erro ao excluir unidade. Tente novamente.' }
 }
 
 export interface DepartmentOption {

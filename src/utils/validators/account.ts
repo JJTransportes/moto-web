@@ -4,9 +4,41 @@ export function validateEmail(email: string): string | undefined {
   return undefined
 }
 
+export interface PasswordRequirement {
+  key: string
+  label: string
+  test: (password: string) => boolean
+}
+
+export const PASSWORD_REQUIREMENTS: PasswordRequirement[] = [
+  { key: 'length', label: 'Entre 8 e 72 caracteres', test: p => p.length >= 8 && p.length <= 72 },
+  { key: 'uppercase', label: 'Pelo menos 1 letra maiúscula', test: p => /[A-Z]/.test(p) },
+  { key: 'lowercase', label: 'Pelo menos 1 letra minúscula', test: p => /[a-z]/.test(p) },
+  { key: 'digit', label: 'Pelo menos 1 número', test: p => /\d/.test(p) },
+  { key: 'special', label: 'Pelo menos 1 caractere especial (ex: ! @ # $ % &)', test: p => /[^A-Za-z0-9\s]/.test(p) },
+]
+
+export function isPasswordValid(password: string): boolean {
+  return PASSWORD_REQUIREMENTS.every(r => r.test(password))
+}
+
 export function validatePassword(password: string): string | undefined {
   if (!password) return 'Senha é obrigatória.'
-  if (password.length < 8) return 'Senha deve ter no mínimo 8 caracteres.'
-  if (password.length > 72) return 'Senha deve ter no máximo 72 caracteres.'
+  const failed = PASSWORD_REQUIREMENTS.filter(r => !r.test(password))
+  if (failed.length > 0) {
+    return failed.map(r => `A senha deve conter: ${r.label.toLowerCase()}.`).join(' ')
+  }
+  return undefined
+}
+
+export function validateConfirmEmail(email: string, confirmEmail: string): string | undefined {
+  if (!confirmEmail.trim()) return 'Confirme o e-mail.'
+  if (email.trim() !== confirmEmail.trim()) return 'Os e-mails não coincidem.'
+  return undefined
+}
+
+export function validateConfirmPassword(password: string, confirmPassword: string): string | undefined {
+  if (!confirmPassword) return 'Confirme a senha.'
+  if (password !== confirmPassword) return 'Senhas não coincidem.'
   return undefined
 }

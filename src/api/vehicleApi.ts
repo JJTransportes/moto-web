@@ -86,7 +86,10 @@ export async function createVehicle(token: string, input: CreateVehicleInput): P
     body: JSON.stringify(input),
   })
   if (result.ok) return { ok: true, data: result.data }
-  return { ok: false, status: result.status, message: 'Erro ao criar veículo. Verifique os dados e tente novamente.' }
+  // Sem apiMessage aqui, mensagens específicas do backend (ex: "Já existe um
+  // veículo com esta placa.") ficavam trocadas por um erro genérico que não
+  // dizia qual dado estava errado.
+  return { ok: false, status: result.status, message: result.apiMessage ?? 'Erro ao criar veículo. Verifique os dados e tente novamente.' }
 }
 
 export async function updateVehicle(token: string, vehicleId: string, input: UpdateVehicleInput): Promise<GetVehicleResult> {
@@ -95,7 +98,7 @@ export async function updateVehicle(token: string, vehicleId: string, input: Upd
     body: JSON.stringify(input),
   })
   if (result.ok) return { ok: true, data: result.data }
-  return { ok: false, status: result.status, message: 'Erro ao atualizar veículo. Verifique os dados e tente novamente.' }
+  return { ok: false, status: result.status, message: result.apiMessage ?? 'Erro ao atualizar veículo. Verifique os dados e tente novamente.' }
 }
 
 export async function deleteVehicle(token: string, vehicleId: string): Promise<DeleteVehicleResult> {
