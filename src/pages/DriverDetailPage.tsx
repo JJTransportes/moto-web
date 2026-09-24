@@ -265,11 +265,11 @@ export default function DriverDetailPage() {
             value={driver.access === 'Admin' ? 'Administrador' : 'Usuário'}
           />
         )}
-        {(driver.city || driver.state) && (
+        {(driver.address?.city || driver.address?.state) && (
           <InfoCard
             icon={<MapPin className="h-4 w-4 text-blue-500" />}
             label="Cidade/Estado"
-            value={[driver.city, driver.state].filter(Boolean).join('/')}
+            value={[driver.address?.city, driver.address?.state].filter(Boolean).join('/')}
           />
         )}
         {driver.createdAt && (

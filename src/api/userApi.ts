@@ -158,8 +158,36 @@ export async function changeDriverVehicle(
     message: result.status === 404
       ? 'Veículo não encontrado.'
       : result.status === 409
-        ? 'Este veículo já está associado a outro motorista.'
+        ? (result.apiMessage ?? 'Este veículo já está associado a outro motorista.')
         : 'Erro ao alterar veículo. Tente novamente.',
+  }
+}
+
+export type UnassignVehicleResult =
+  | { ok: true; data: VehicleInfo }
+  | { ok: false; status: number; message: string }
+
+/**
+ * Desvincula o veículo atualmente associado ao motorista.
+ * O backend expõe esta ação por veículo (`DELETE /api/vehicles/{vehicleId}/assign-driver`),
+ * não por motorista — por isso é necessário o `vehicleId` do veículo atual.
+ */
+export async function unassignDriverVehicle(
+  token: string,
+  vehicleId: string,
+): Promise<UnassignVehicleResult> {
+  const result = await fetchProtected<VehicleInfo>(`/api/vehicles/${vehicleId}/assign-driver`, token, {
+    method: 'DELETE',
+  })
+  if (result.ok) return { ok: true, data: result.data }
+  return {
+    ok: false,
+    status: result.status,
+    message: result.status === 404
+      ? 'Veículo não encontrado.'
+      : result.status === 409
+        ? (result.apiMessage ?? 'Não é possível desvincular: o motorista está com uma viagem em andamento.')
+        : 'Erro ao desvincular veículo. Tente novamente.',
   }
 }
 
