@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { listDrivers, listPassengers } from '../api/userListApi'
 import type { DriverListItem, PassengerListItem } from '../api/userListApi'
-import { fetchUserProfilePhoto, activateUserAccount, deactivateUserAccount } from '../api/userApi'
+import { activateUserAccount, deactivateUserAccount } from '../api/userApi'
 import ConfirmationModal from '../components/ConfirmationModal'
 import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
@@ -71,7 +71,6 @@ export default function UsersPage() {
   const [drivers, setDrivers] = useState<DriverListItem[]>([])
   const [passengers, setPassengers] = useState<PassengerListItem[]>([])
   const [totalCount, setTotalCount] = useState(0)
-  const [photoMap, setPhotoMap] = useState<Map<string, string | null>>(new Map())
 
   // Activate/deactivate state
   const [statusTarget, setStatusTarget] = useState<{ userId: string; fullName: string; isActive: boolean } | null>(null)
@@ -193,30 +192,6 @@ export default function UsersPage() {
   const items: (DriverListItem | PassengerListItem)[] =
     role === 'drivers' ? drivers : passengers
 
-  // Fetch photos for visible items
-  useEffect(() => {
-    if (pageStatus !== 'loaded' || !token) return
-
-    const ids = items.map((item) =>
-      role === 'drivers'
-        ? (item as DriverListItem).userId
-        : (item as PassengerListItem).userId,
-    )
-
-    ids.forEach((id) => {
-      if (photoMap.has(id)) return
-      fetchUserProfilePhoto(token, id).then((result) => {
-        if (result.ok) {
-          setPhotoMap((prev) => {
-            const next = new Map(prev)
-            next.set(id, result.data.photoUrl)
-            return next
-          })
-        }
-      })
-    })
-  }, [pageStatus, items.length, role, token])
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -337,12 +312,7 @@ export default function UsersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <UserAvatar
-                          photoUrl={(() => {
-                            const id = role === 'drivers'
-                              ? (item as DriverListItem).userId
-                              : (item as PassengerListItem).userId
-                            return photoMap.get(id) ?? null
-                          })()}
+                          photoUrl={item.photoUrl ?? null}
                           fullName={item.fullName}
                           size="sm"
                         />

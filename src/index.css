@@ -1,3 +1,8 @@
+@import './styles/cobalto/tokens.css';
+@import './styles/cobalto/animacoes.css';
+@import './styles/cobalto/componentes.css';
+@import './styles/global.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -53,7 +53,10 @@ export default function FleetCreationPage() {
   const set = (field: keyof FormValues) => (value: string) =>
     setForm(f => ({ ...f, [field]: value }))
 
-  function validate(): boolean {
+  // WEB-13: `validate()` e o antigo `isFormComplete` reimplementavam as
+  // mesmas regras em dois lugares e podiam divergir silenciosamente.
+  // `computeErrors()` é a única fonte de verdade agora.
+  function computeErrors(): FieldErrors {
     const e: FieldErrors = {}
     e.brand = validateRequired(form.brand, 'Marca') ?? validateMaxLength(form.brand, 20, 'Marca') ?? validateSafeText(form.brand, 'Marca')
     e.model = validateRequired(form.model, 'Modelo') ?? validateMaxLength(form.model, 20, 'Modelo') ?? validateSafeText(form.model, 'Modelo')
@@ -67,6 +70,11 @@ export default function FleetCreationPage() {
     }
     e.plate = validatePlate(form.plate)
     e.categoryId = validateRequired(form.categoryId, 'Categoria')
+    return e
+  }
+
+  function validate(): boolean {
+    const e = computeErrors()
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
@@ -98,10 +106,7 @@ export default function FleetCreationPage() {
     label: c.title,
   }))
 
-  const isFormComplete =
-    Object.values(form).every(v => v.trim() !== '') &&
-    form.brand.length <= 20 &&
-    form.model.length <= 20
+  const isFormComplete = Object.values(computeErrors()).every(v => !v)
 
   return (
     <div className="mx-auto max-w-2xl">

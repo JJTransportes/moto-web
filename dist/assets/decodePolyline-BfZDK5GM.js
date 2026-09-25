@@ -1,0 +1,1 @@
+function h(e){const o=[];let t=0,n=0,l=0;for(;t<e.length;){const[i,d]=u(e,t);t=d;const[r,a]=u(e,t);t=a,n+=i,l+=r,o.push({lat:n/1e5,lng:l/1e5})}return o}function u(e,o){let t=0,n=0,l=o,i;do{if(l>=e.length)throw new Error("Polyline inválida");i=e.charCodeAt(l++)-63,t|=(i&31)<<n,n+=5}while(i>=32);return[(t&1)!==0?~(t>>1):t>>1,l]}export{h as d};
