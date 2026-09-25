@@ -50,15 +50,15 @@ function SidebarNavLink({ to, label, end = false, icon: Icon }: SidebarNavLinkPr
       to={to}
       end={end}
       className={({ isActive }) =>
-        `flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-colors ${isActive
-          ? 'bg-blue-600 text-white shadow-sm'
-          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+        `mo-focus flex min-h-12 w-full items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-semibold transition-all ${isActive
+          ? 'bg-cobalto text-white shadow-moto before:h-5 before:w-1 before:rounded-full before:bg-white'
+          : 'text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] hover:text-cobalto'
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+          <Icon className={`h-5 w-5 shrink-0 ${isActive ? 'text-white' : 'text-[var(--text-tertiary)]'}`} />
           <span>{label}</span>
         </>
       )}
@@ -90,7 +90,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border-default)] bg-white/90 px-4 py-6 shadow-[var(--shadow-1)]">
       <SidebarBranding />
 
       <nav className="flex flex-1 flex-col gap-4">
@@ -126,7 +126,7 @@ export default function Sidebar() {
       <button
         type="button"
         onClick={handleSignOut}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+        className="mo-focus flex min-h-12 w-full items-center gap-3 rounded-[18px] px-3 py-3 text-sm font-semibold text-[var(--text-tertiary)] transition-colors hover:bg-red-50 hover:text-[var(--danger)]"
       >
         <LogOut className="h-5 w-5 shrink-0 text-slate-400" />
         <span>Sair</span>
@@ -164,8 +164,8 @@ function SidebarBranding() {
 
   // Fallback to hardcoded branding
   return (
-    <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-lg font-bold text-white">
+    <div className="mo-surface mb-8 flex items-center gap-3 px-3 py-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cobalto font-display text-lg font-bold text-white shadow-moto">
         M
       </div>
       <div className="min-w-0">

@@ -13,9 +13,12 @@ body,
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #fff;
-  color: #4e4e4e;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
 }
+
+button, input, select, textarea { font: inherit; }
+h1, h2, .font-bold { font-family: var(--font-display); }

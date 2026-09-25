@@ -7,6 +7,7 @@ import TravelStatusBadge from '../components/travel/TravelStatusBadge'
 import TravelMap from '../components/travel/TravelMap'
 import CancelTravelModal from '../components/travel/CancelTravelModal'
 import { ArrowLeft, MapPin, Clock, Route } from 'lucide-react'
+import { decodePolyline } from '../utils/decodePolyline'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -247,9 +248,18 @@ export default function TravelDetailPage() {
             originLng={firstRoute.initialLongitude}
             originLabel={firstRoute.departureAddress}
             destLat={lastRoute.destinationLatitude}
-            destLng={lastRoute.destinationLongitude}
-            destLabel={lastRoute.destinationAddress}
-          />
+              destLng={lastRoute.destinationLongitude}
+              destLabel={lastRoute.destinationAddress}
+              route={travel.routes.flatMap((route) => {
+                try {
+                  return decodePolyline(route.encodedPolyline).map(
+                    ({ lat, lng }): [number, number] => [lat, lng],
+                  )
+                } catch {
+                  return []
+                }
+              })}
+            />
         </div>
       )}
 

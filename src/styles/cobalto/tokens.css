@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+:root {
+  color-scheme: light;
+  --porcelana-50:#fbfcfe; --porcelana-100:#f4f7fc; --porcelana-200:#eaf0fa; --porcelana-300:#dce5f5;
+  --tinta-900:#0a1633; --tinta-700:#34425f; --tinta-500:#5a6784; --tinta-300:#a2adc4;
+  --cobalto-300:#9dbbff; --cobalto-500:#2f6bff; --cobalto-600:#1f4fe0; --cobalto-700:#1a3fb8;
+  --safira-800:#132c86; --safira-900:#0b1b55; --sinal-500:#95c11f; --sinal-700:#4a6e00;
+  --ambar-500:#f2a93b; --ambar-700:#945800; --coral-600:#be2a45;
+  --bg-base:var(--porcelana-100); --bg-raised:#fff;
+  --bg-canvas:radial-gradient(70% 55% at 100% 0%,rgb(91 140 255/.22),transparent 62%),radial-gradient(55% 45% at 0% 8%,rgb(157 187 255/.3),transparent 60%),linear-gradient(180deg,#f8fafe 0%,#eff3fb 100%);
+  --text-primary:var(--tinta-900); --text-secondary:var(--tinta-700); --text-tertiary:var(--tinta-500); --text-disabled:var(--tinta-300);
+  --accent:var(--cobalto-600); --accent-soft:rgb(47 107 255/.1); --success:var(--sinal-700); --warning:var(--ambar-700); --danger:var(--coral-600);
+  --border-subtle:rgb(19 44 134/.07); --border-default:rgb(19 44 134/.12); --border-strong:rgb(19 44 134/.22);
+  --font-display:'Sora','Plus Jakarta Sans',system-ui,sans-serif; --font-ui:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --radius-sm:12px; --radius-md:18px; --radius-lg:26px; --radius-pill:999px;
+  --shadow-1:0 1px 1px rgb(11 27 85/.04),0 2px 6px -2px rgb(11 27 85/.08);
+  --shadow-2:0 1px 1px rgb(11 27 85/.04),0 8px 20px -8px rgb(19 44 134/.14),0 22px 44px -24px rgb(19 44 134/.22);
+  --ring-focus:0 0 0 3px #fff,0 0 0 5px rgb(47 107 255/.55); --dur-fast:180ms; --dur-base:280ms;
+}

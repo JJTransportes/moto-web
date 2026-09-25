@@ -22,6 +22,7 @@ export default function AppButton({
       onClick={onClick}
       disabled={disabled || loading}
       className={styles.button}
+      aria-busy={loading || undefined}
     >
       {children}
     </button>
