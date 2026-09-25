@@ -1,33 +1,48 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import { BrandImageProvider } from './auth/BrandImageContext'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
-import DashboardPage from './pages/DashboardPage'
-import DriverCreationPage from './pages/DriverCreationPage'
-import DriverDetailPage from './pages/DriverDetailPage'
-import DriverEditPage from './pages/DriverEditPage'
-import FleetCreationPage from './pages/FleetCreationPage'
-import FleetDetailPage from './pages/FleetDetailPage'
-import FleetEditPage from './pages/FleetEditPage'
-import FleetListPage from './pages/FleetListPage'
 import LoginPage from './pages/LoginPage'
-import PartitionCreationPage from './pages/PartitionCreationPage'
-import PartitionDetailPage from './pages/PartitionDetailPage'
-import PartitionEditPage from './pages/PartitionEditPage'
-import PartitionListPage from './pages/PartitionListPage'
-import PassengerCreationPage from './pages/PassengerCreationPage'
-import PassengerDetailPage from './pages/PassengerDetailPage'
-import PassengerEditPage from './pages/PassengerEditPage'
-import PasswordResetPage from './pages/PasswordResetPage'
-import ReportsPage from './pages/ReportsPage'
-import SettingsPage from './pages/SettingsPage'
-import TravelDetailPage from './pages/TravelDetailPage'
-import TravelListPage from './pages/TravelListPage'
-import UsageTermsPage from './pages/UsageTermsPage'
-import PublicUsageTermsPage from './pages/PublicUsageTermsPage'
-import UsersPage from './pages/UsersPage'
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+
+// WEB-10: o bundle inicial carregava as ~25 páginas do painel de uma vez,
+// mesmo as que exigem GlobalAdmin e a maioria dos usuários nunca abre numa
+// sessão. `lazy` separa cada página em seu próprio chunk, baixado só quando
+// a rota é navegada. `LoginPage` fica eager (é a primeira tela de quem não
+// está autenticado, não faz sentido esperar um chunk extra pra ela).
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const DriverCreationPage = lazy(() => import('./pages/DriverCreationPage'))
+const DriverDetailPage = lazy(() => import('./pages/DriverDetailPage'))
+const DriverEditPage = lazy(() => import('./pages/DriverEditPage'))
+const FleetCreationPage = lazy(() => import('./pages/FleetCreationPage'))
+const FleetDetailPage = lazy(() => import('./pages/FleetDetailPage'))
+const FleetEditPage = lazy(() => import('./pages/FleetEditPage'))
+const FleetListPage = lazy(() => import('./pages/FleetListPage'))
+const PartitionCreationPage = lazy(() => import('./pages/PartitionCreationPage'))
+const PartitionDetailPage = lazy(() => import('./pages/PartitionDetailPage'))
+const PartitionEditPage = lazy(() => import('./pages/PartitionEditPage'))
+const PartitionListPage = lazy(() => import('./pages/PartitionListPage'))
+const PassengerCreationPage = lazy(() => import('./pages/PassengerCreationPage'))
+const PassengerDetailPage = lazy(() => import('./pages/PassengerDetailPage'))
+const PassengerEditPage = lazy(() => import('./pages/PassengerEditPage'))
+const PasswordResetPage = lazy(() => import('./pages/PasswordResetPage'))
+const ReportsPage = lazy(() => import('./pages/ReportsPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const TravelDetailPage = lazy(() => import('./pages/TravelDetailPage'))
+const TravelListPage = lazy(() => import('./pages/TravelListPage'))
+const UsageTermsPage = lazy(() => import('./pages/UsageTermsPage'))
+const PublicUsageTermsPage = lazy(() => import('./pages/PublicUsageTermsPage'))
+const UsersPage = lazy(() => import('./pages/UsersPage'))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <p className="text-sm text-gray-400">Carregando...</p>
+    </div>
+  )
+}
 
 function ForbiddenPage() {
   return (
@@ -45,6 +60,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <BrandImageProvider>
+          <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<PasswordResetPage />} />
@@ -80,6 +96,7 @@ export default function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </BrandImageProvider>
       </AuthProvider>
     </BrowserRouter>

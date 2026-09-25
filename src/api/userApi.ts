@@ -30,6 +30,8 @@ export interface DriverProfile {
   categoryTitle?: string | null
   travelCount?: number
   photoUrl?: string | null
+  // BKD-14: usado para detectar edição concorrente — ver UpdateDriverRequest.
+  updatedAt?: string
 }
 
 export type DriverProfileResult =
@@ -90,6 +92,8 @@ export interface PassengerProfile {
   city?: string | null
   state?: string | null
   photoUrl?: string | null
+  // BKD-14: ver comentário equivalente em DriverProfile.
+  updatedAt?: string
 }
 
 export type PassengerProfileResult =
@@ -268,6 +272,9 @@ export interface UpdatePassengerRequest {
   address: AddressCommand
   adminCode: string
   departmentIds?: string[]
+  // BKD-14: valor de profile.updatedAt lido antes da edição — o backend usa
+  // isto pra detectar se outro admin editou o registro nesse meio-tempo.
+  updatedAt?: string
 }
 
 export interface UpdateDriverRequest {
@@ -280,6 +287,8 @@ export interface UpdateDriverRequest {
   address: AddressCommand
   adminCode: string
   phone?: string | null
+  // BKD-14: ver comentário equivalente em UpdatePassengerRequest.
+  updatedAt?: string
 }
 
 export type UpdatePassengerResult =
@@ -305,8 +314,11 @@ export async function updatePassenger(
     status: result.status,
     message: result.status === 401
       ? 'Código do administrador inválido.'
+      // BKD-14: 409 agora cobre dois casos (CPF duplicado ou conflito de
+      // concorrência) com mensagens diferentes — usa a mensagem real do
+      // backend (apiMessage) em vez de assumir sempre "CPF duplicado".
       : result.status === 409
-        ? 'CPF já cadastrado para outro usuário.'
+        ? (result.apiMessage ?? 'CPF já cadastrado para outro usuário.')
         : result.status === 404
           ? 'Passageiro não encontrado.'
           : 'Erro ao atualizar passageiro. Verifique os dados e tente novamente.',
@@ -328,8 +340,9 @@ export async function updateDriver(
     status: result.status,
     message: result.status === 401
       ? 'Código do administrador inválido.'
+      // BKD-14: ver comentário equivalente em updatePassenger.
       : result.status === 409
-        ? 'CPF ou CNH já cadastrados para outro usuário.'
+        ? (result.apiMessage ?? 'CPF ou CNH já cadastrados para outro usuário.')
         : result.status === 404
           ? 'Motorista não encontrado.'
           : 'Erro ao atualizar motorista. Verifique os dados e tente novamente.',

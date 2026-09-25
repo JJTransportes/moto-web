@@ -1,0 +1,11 @@
+import{f as a,j as s,i as d}from"./index-BuYNeJE3.js";import{X as g}from"./x-DwqZLWR-.js";/**
+ * @license lucide-react v1.16.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const f=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"m9 12 2 2 4-4",key:"dzmm74"}]],u=a("circle-check",f);/**
+ * @license lucide-react v1.16.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const p=[["path",{d:"M12 2v10",key:"mnfbl"}],["path",{d:"M18.4 6.6a9 9 0 1 1-12.77.04",key:"obofu9"}]],N=a("power",p);function A({message:t,onClose:e}){return s.jsx("div",{className:"fixed right-4 top-4 z-[60] w-full max-w-sm animate-[fade-in_0.2s_ease-out]",children:s.jsxs("div",{role:"status",className:"flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 shadow-lg",children:[s.jsx(u,{className:"mt-0.5 h-5 w-5 flex-shrink-0 text-green-600"}),s.jsx("p",{className:"flex-1 text-sm font-medium text-green-800",children:t}),s.jsx("button",{type:"button",onClick:e,"aria-label":"Fechar",className:"flex-shrink-0 text-green-500 hover:text-green-700",children:s.jsx(g,{className:"h-4 w-4"})})]})})}const n=["bg-blue-500","bg-green-500","bg-purple-500","bg-orange-500","bg-pink-500","bg-teal-500","bg-indigo-500","bg-rose-500"],b={sm:"h-8 w-8 text-xs",md:"h-12 w-12 text-sm",lg:"h-20 w-20 text-xl"};function w(t){let e=0;for(let r=0;r<t.length;r++)e=t.charCodeAt(r)+((e<<5)-e);return Math.abs(e)}function j(t){const e=t.trim().split(/\s+/).filter(Boolean);return e.length===0?"?":e.length===1?e[0].charAt(0).toUpperCase():(e[0].charAt(0)+e[e.length-1].charAt(0)).toUpperCase()}function C({photoUrl:t,fullName:e,size:r="md",className:o=""}){const[l,c]=d.useState(!1),i=w(e)%n.length,h=j(e),m=b[r],x=t&&!l;return s.jsx("div",{className:`inline-flex items-center justify-center rounded-full overflow-hidden shrink-0 ${m} ${o}`,children:x?s.jsx("img",{src:t,alt:e,className:"h-full w-full object-cover",onError:()=>c(!0)}):s.jsx("span",{className:`flex h-full w-full items-center justify-center font-semibold text-white ${n[i]}`,children:h})})}export{u as C,N as P,A as T,C as U};

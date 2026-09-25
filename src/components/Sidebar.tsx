@@ -1,6 +1,6 @@
 import { Building2, Car, FileText, ListStart, LogOut, Route, Settings, Users } from 'lucide-react'
 import { ReactNode } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { useBrandImage } from '../auth/BrandImageContext'
 
@@ -77,12 +77,16 @@ function SidebarSection({ label, children }: { label: string; children: ReactNod
 
 export default function Sidebar() {
   const { hasMinimumRole, signOut } = useAuth()
-  const navigate = useNavigate()
   const isGlobalAdmin = hasMinimumRole('GlobalAdmin')
 
+  // Sem navigate() manual aqui de propósito: chamar `navigate('/login')` ao
+  // mesmo tempo que `signOut()` muda `isAuthenticated` cria uma corrida com
+  // o redirecionamento declarativo do `ProtectedRoute` (que também reage à
+  // mesma mudança de estado) — os dois mexendo no histórico do React Router
+  // quase juntos deixava a URL mudar sem a árvore de rotas acompanhar.
+  // `ProtectedRoute` já cuida do redirecionamento sozinho.
   function handleSignOut() {
     signOut()
-    navigate('/login', { replace: true })
   }
 
   return (

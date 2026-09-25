@@ -163,7 +163,7 @@ export default function PassengerEditPage() {
   }
 
   async function handleConfirm(adminCode: string) {
-    if (!token || !form || !passengerId) return
+    if (!token || !form || !passengerId || !passenger) return
     setModalLoading(true)
     setModalError(undefined)
 
@@ -181,6 +181,8 @@ export default function PassengerEditPage() {
       },
       adminCode,
       departmentIds: form.department ? [form.department] : [],
+      // BKD-14: ver comentário equivalente em DriverEditPage.
+      updatedAt: passenger.updatedAt,
     })
 
     setModalLoading(false)

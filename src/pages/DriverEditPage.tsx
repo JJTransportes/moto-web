@@ -169,7 +169,7 @@ export default function DriverEditPage() {
   }
 
   async function handleConfirm(adminCode: string) {
-    if (!token || !form || !driverId) return
+    if (!token || !form || !driverId || !driver) return
     setModalLoading(true)
     setModalError(undefined)
 
@@ -187,6 +187,9 @@ export default function DriverEditPage() {
         countryCode: 'BR',
       },
       adminCode,
+      // BKD-14: envia de volta o updatedAt lido no GET — o backend rejeita
+      // com 409 se o registro mudou desde então (edição concorrente).
+      updatedAt: driver.updatedAt,
     })
 
     setModalLoading(false)
