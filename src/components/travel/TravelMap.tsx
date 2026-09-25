@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import { useMemo } from 'react'
 
@@ -18,6 +18,7 @@ interface TravelMapProps {
   destLng: number
   destLabel: string
   height?: string
+  route?: Array<[number, number]>
 }
 
 function createIcon(color: string): L.DivIcon {
@@ -39,7 +40,7 @@ function createIcon(color: string): L.DivIcon {
 export default function TravelMap({
   originLat, originLng, originLabel,
   destLat, destLng, destLabel,
-  height = '400px',
+  height = '400px', route,
 }: TravelMapProps) {
   const bounds = useMemo(() => {
     return L.latLngBounds(
@@ -48,11 +49,11 @@ export default function TravelMap({
     )
   }, [originLat, originLng, destLat, destLng])
 
-  const originIcon = useMemo(() => createIcon('#22c55e'), [])
-  const destIcon = useMemo(() => createIcon('#ef4444'), [])
+  const originIcon = useMemo(() => createIcon('#95c11f'), [])
+  const destIcon = useMemo(() => createIcon('#1f4fe0'), [])
 
   return (
-    <div style={{ height }} className="w-full rounded-lg overflow-hidden border border-gray-200">
+    <div style={{ height }} className="w-full overflow-hidden rounded-[26px] border border-[var(--border-default)] shadow-moto">
       <MapContainer
         bounds={bounds}
         style={{ height: '100%', width: '100%' }}
@@ -63,6 +64,12 @@ export default function TravelMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {route && route.length > 1 && (
+          <>
+            <Polyline positions={route} pathOptions={{ color: '#9dbbff', opacity: 0.48, weight: 12 }} />
+            <Polyline positions={route} pathOptions={{ color: '#1f4fe0', opacity: 1, weight: 5 }} />
+          </>
+        )}
         <Marker position={[originLat, originLng]} icon={originIcon}>
           <Popup>{originLabel}</Popup>
         </Marker>

@@ -9,6 +9,7 @@ import {
 } from '@vis.gl/react-google-maps'
 import type { FilterType, OnlineUserDto, TodayTravelDto } from '../../types/map'
 import MapInfoWindowContent from './MapInfoWindowContent'
+import CobaltGoogleRoute from './CobaltGoogleRoute'
 
 const JACAREI_CENTER = { lat: -23.305, lng: -45.966 }
 const DEFAULT_ZOOM = 13
@@ -101,7 +102,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
 
   if (!apiKey || apiKey === 'your_google_maps_api_key_here') {
     return (
-      <div className="flex min-h-[500px] items-center justify-center rounded-xl border border-slate-200 bg-slate-50">
+      <div className="mo-surface flex min-h-[500px] items-center justify-center">
         <div className="text-center">
           <p className="text-slate-600 font-medium">Google Maps API key não configurada</p>
           <p className="text-sm text-slate-400 mt-1">
@@ -114,7 +115,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
 
   return (
     <APIProvider apiKey={apiKey}>
-      <div className="h-[600px] w-full overflow-hidden rounded-xl border border-slate-200">
+      <div className="h-[600px] w-full overflow-hidden rounded-[26px] border border-[var(--border-default)] shadow-moto">
         <Map
           defaultCenter={JACAREI_CENTER}
           defaultZoom={DEFAULT_ZOOM}
@@ -129,7 +130,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
           {visibleUsers.map((user) => {
             const isStale =
               new Date().getTime() - new Date(user.lastUpdated).getTime() > 5 * 60 * 1000
-            const pinColor = user.role === 'Driver' ? '#3B82F6' : '#22C55E'
+            const pinColor = user.role === 'Driver' ? '#1F4FE0' : '#95C11F'
             return (
               <AdvancedMarker
                 key={`user-${user.userId}`}
@@ -137,9 +138,9 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
                 onClick={() => handleUserClick(user)}
               >
                 <Pin
-                  background={isStale ? '#9CA3AF' : pinColor}
+                  background={isStale ? '#A2ADC4' : pinColor}
                   glyphColor="#fff"
-                  borderColor={isStale ? '#6B7280' : pinColor}
+                  borderColor={isStale ? '#5A6784' : pinColor}
                 />
               </AdvancedMarker>
             )
@@ -156,7 +157,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
                   }
                 >
                   <div
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white shadow-md"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-sinal text-xs font-bold text-[var(--text-primary)] shadow-md"
                     title="Origem"
                   >
                     A
@@ -169,13 +170,15 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
                   }
                 >
                   <div
-                    className="flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white shadow-md"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-cobalto text-xs font-bold text-white shadow-md"
                     title="Destino"
                   >
                     B
                   </div>
                 </AdvancedMarker>
-                {/* Polyline would require decoding - simplified as straight line for now */}
+                {travel.encodedPolyline && (
+                  <CobaltGoogleRoute encodedPolyline={travel.encodedPolyline} />
+                )}
               </div>
             )
           })}
@@ -196,7 +199,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
           {/* Empty state */}
           {visibleUsers.length === 0 && visibleTravels.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="rounded-xl bg-white/90 px-6 py-4 shadow-lg">
+              <div className="mo-map-overlay px-6 py-4">
                 <p className="text-slate-600 font-medium">
                   {activeFilter === 'travels'
                     ? 'Nenhuma viagem registrada hoje'

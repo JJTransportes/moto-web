@@ -85,21 +85,29 @@ export default function FleetEditPage() {
   const set = (field: keyof FormValues) => (value: string) =>
     setForm(f => f ? { ...f, [field]: value } : f)
 
-  function validate(): boolean {
-    if (!form) return false
+  // WEB-13: `validate()` e o antigo `isFormComplete` reimplementavam as
+  // mesmas regras em dois lugares e podiam divergir silenciosamente.
+  // `computeErrors()` é a única fonte de verdade agora.
+  function computeErrors(values: FormValues): FieldErrors {
     const e: FieldErrors = {}
-    e.brand = validateRequired(form.brand, 'Marca') ?? validateMaxLength(form.brand, 20, 'Marca') ?? validateSafeText(form.brand, 'Marca')
-    e.model = validateRequired(form.model, 'Modelo') ?? validateMaxLength(form.model, 20, 'Modelo') ?? validateSafeText(form.model, 'Modelo')
-    if (!form.year.trim()) {
+    e.brand = validateRequired(values.brand, 'Marca') ?? validateMaxLength(values.brand, 20, 'Marca') ?? validateSafeText(values.brand, 'Marca')
+    e.model = validateRequired(values.model, 'Modelo') ?? validateMaxLength(values.model, 20, 'Modelo') ?? validateSafeText(values.model, 'Modelo')
+    if (!values.year.trim()) {
       e.year = 'Ano é obrigatório.'
     } else {
-      const y = Number(form.year)
+      const y = Number(values.year)
       if (!Number.isInteger(y) || y < 1900 || y > new Date().getFullYear() + 1) {
         e.year = 'Ano inválido.'
       }
     }
-    e.plate = validatePlate(form.plate)
-    e.categoryId = validateRequired(form.categoryId, 'Categoria')
+    e.plate = validatePlate(values.plate)
+    e.categoryId = validateRequired(values.categoryId, 'Categoria')
+    return e
+  }
+
+  function validate(): boolean {
+    if (!form) return false
+    const e = computeErrors(form)
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
@@ -131,10 +139,7 @@ export default function FleetEditPage() {
     label: c.title,
   }))
 
-  const isFormComplete =
-    Object.values(form).every(v => v.trim() !== '') &&
-    form.brand.length <= 20 &&
-    form.model.length <= 20
+  const isFormComplete = Object.values(computeErrors(form)).every(v => !v)
 
   return (
     <div className="mx-auto max-w-2xl">

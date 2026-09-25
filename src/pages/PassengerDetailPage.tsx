@@ -370,11 +370,11 @@ export default function PassengerDetailPage() {
             value={passenger.access === 'Admin' ? 'Administrador' : 'Usuário'}
           />
         )}
-        {(passenger.city || passenger.state) && (
+        {(passenger.address?.city || passenger.address?.state) && (
           <InfoCard
             icon={<MapPin className="h-4 w-4 text-blue-500" />}
             label="Cidade/Estado"
-            value={[passenger.city, passenger.state].filter(Boolean).join('/')}
+            value={[passenger.address?.city, passenger.address?.state].filter(Boolean).join('/')}
           />
         )}
       </div>
