@@ -104,7 +104,15 @@ export default function PartitionCreationPage() {
     setDepartmentList(departmentList.filter((_, i) => i !== index))
   }
 
-  function validate(): boolean {
+  // WEB-13: `validate()` e o antigo `isFormComplete` reimplementavam as
+  // mesmas regras em dois lugares (um pra habilitar o botão, outro pra
+  // bloquear o submit) — podiam divergir silenciosamente, como já acontecia
+  // aqui: `isFormComplete` não rodava `validateSafeText`, então o botão
+  // ficava habilitado com texto que `validate()` rejeitaria no submit.
+  // `computeErrors()` é agora a única fonte de verdade; `validate()` só
+  // aplica o resultado ao estado de erros, e `isFormComplete` é derivado
+  // dele em vez de reimplementar as regras.
+  function computeErrors(): FieldErrors {
     const e: FieldErrors = {}
     e.name = validateRequired(form.name, 'Nome') ?? validateMaxLength(form.name, 100, 'Nome') ?? validateSafeText(form.name, 'Nome')
     e.identifier = validateRequired(form.identifier, 'Identificador') ?? validateMaxLength(form.identifier, 30, 'Identificador') ?? validateSafeText(form.identifier, 'Identificador')
@@ -121,27 +129,16 @@ export default function PartitionCreationPage() {
     if (departmentList.length === 0) {
       e.departments = 'Adicione pelo menos uma secretaria.'
     }
+    return e
+  }
+
+  function validate(): boolean {
+    const e = computeErrors()
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
 
-  const isFormComplete =
-    form.name.trim() !== '' &&
-    form.name.length <= 100 &&
-    form.identifier.trim() !== '' &&
-    form.identifier.length <= 30 &&
-    form.acronym.trim() !== '' &&
-    form.acronym.length <= 10 &&
-    form.categoryIds.length > 0 &&
-    form.lineOne.trim() !== '' &&
-    form.lineOne.length <= 120 &&
-    form.lineTwo.length <= 60 &&
-    form.district.length <= 60 &&
-    form.city.trim() !== '' &&
-    form.city.length <= 60 &&
-    form.state.trim() !== '' &&
-    form.countryCode.trim() !== '' &&
-    departmentList.length > 0
+  const isFormComplete = Object.values(computeErrors()).every(v => !v)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

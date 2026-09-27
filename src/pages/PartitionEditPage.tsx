@@ -148,45 +148,37 @@ export default function PartitionEditPage() {
     setDepartmentList(departmentList.filter((_, i) => i !== index))
   }
 
-  function validate(): boolean {
-    if (!form) return false
+  // WEB-13: `validate()` e o antigo `isFormComplete` reimplementavam as
+  // mesmas regras em dois lugares e podiam divergir silenciosamente.
+  // `computeErrors()` é a única fonte de verdade agora.
+  function computeErrors(values: FormValues): FieldErrors {
     const e: FieldErrors = {}
-    e.name = validateRequired(form.name, 'Nome') ?? validateMaxLength(form.name, 100, 'Nome') ?? validateSafeText(form.name, 'Nome')
-    e.identifier = validateRequired(form.identifier, 'Identificador') ?? validateMaxLength(form.identifier, 30, 'Identificador') ?? validateSafeText(form.identifier, 'Identificador')
-    e.acronym = validateRequired(form.acronym, 'Sigla') ?? validateMaxLength(form.acronym, 10, 'Sigla') ?? validateSafeText(form.acronym, 'Sigla')
+    e.name = validateRequired(values.name, 'Nome') ?? validateMaxLength(values.name, 100, 'Nome') ?? validateSafeText(values.name, 'Nome')
+    e.identifier = validateRequired(values.identifier, 'Identificador') ?? validateMaxLength(values.identifier, 30, 'Identificador') ?? validateSafeText(values.identifier, 'Identificador')
+    e.acronym = validateRequired(values.acronym, 'Sigla') ?? validateMaxLength(values.acronym, 10, 'Sigla') ?? validateSafeText(values.acronym, 'Sigla')
     if (departmentList.length === 0) {
       e.departments = 'Adicione pelo menos uma secretaria.'
     }
     if (isGlobalAdmin && selectedCategoryIds.length === 0) {
       e.categoryIds = 'Selecione pelo menos uma categoria.'
     }
-    e.lineOne = validateRequired(form.lineOne, 'Logradouro') ?? validateMaxLength(form.lineOne, 120, 'Logradouro') ?? validateSafeText(form.lineOne, 'Logradouro')
-    e.lineTwo = validateMaxLength(form.lineTwo, 60, 'Complemento') ?? validateSafeText(form.lineTwo, 'Complemento')
-    e.district = validateMaxLength(form.district, 60, 'Bairro') ?? validateSafeText(form.district, 'Bairro')
-    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
-    e.state = validateUf(form.state)
-    e.countryCode = validateRequired(form.countryCode, 'País')
+    e.lineOne = validateRequired(values.lineOne, 'Logradouro') ?? validateMaxLength(values.lineOne, 120, 'Logradouro') ?? validateSafeText(values.lineOne, 'Logradouro')
+    e.lineTwo = validateMaxLength(values.lineTwo, 60, 'Complemento') ?? validateSafeText(values.lineTwo, 'Complemento')
+    e.district = validateMaxLength(values.district, 60, 'Bairro') ?? validateSafeText(values.district, 'Bairro')
+    e.city = validateRequired(values.city, 'Cidade') ?? validateMaxLength(values.city, 60, 'Cidade') ?? validateSafeText(values.city, 'Cidade')
+    e.state = validateUf(values.state)
+    e.countryCode = validateRequired(values.countryCode, 'País')
+    return e
+  }
+
+  function validate(): boolean {
+    if (!form) return false
+    const e = computeErrors(form)
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
 
-  const isFormComplete =
-    form.name.trim() !== '' &&
-    form.name.length <= 100 &&
-    form.identifier.trim() !== '' &&
-    form.identifier.length <= 30 &&
-    form.acronym.trim() !== '' &&
-    form.acronym.length <= 10 &&
-    departmentList.length > 0 &&
-    (!isGlobalAdmin || selectedCategoryIds.length > 0) &&
-    form.lineOne.trim() !== '' &&
-    form.lineOne.length <= 120 &&
-    form.lineTwo.length <= 60 &&
-    form.district.length <= 60 &&
-    form.city.trim() !== '' &&
-    form.city.length <= 60 &&
-    form.state.trim() !== '' &&
-    form.countryCode.trim() !== ''
+  const isFormComplete = Object.values(computeErrors(form)).every(v => !v)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

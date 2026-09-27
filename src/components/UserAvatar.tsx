@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../auth/AuthContext'
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
 const AVATAR_COLORS = [
   'bg-blue-500',
@@ -45,12 +48,53 @@ export default function UserAvatar({
   size = 'md',
   className = '',
 }: UserAvatarProps) {
+  const { token } = useAuth()
   const [imgError, setImgError] = useState(false)
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
   const colorIndex = hashName(fullName) % AVATAR_COLORS.length
   const initials = getInitials(fullName)
   const sizeClass = SIZE_MAP[size]
 
-  const showImage = photoUrl && !imgError
+  // WEB-09 seguiu de quebra: `/api/files/{id}` exige Authorization, e uma
+  // <img src> comum nunca manda esse header — a foto sempre falhava
+  // silenciosamente (onError) e caía pro fallback de iniciais, tanto na
+  // listagem quanto nas páginas de detalhe. Busca o arquivo via fetch
+  // autenticado e usa a blob URL resultante como src.
+  useEffect(() => {
+    setImgError(false)
+    setBlobUrl(null)
+
+    if (!photoUrl || !token) return
+    const isRelative = photoUrl.startsWith('/')
+    if (!isRelative) {
+      // URL já absoluta (ex.: servida por outro host) — usa direto, sem fetch autenticado.
+      return
+    }
+
+    let cancelled = false
+    let objectUrl: string | null = null
+
+    fetch(`${BASE_URL}${photoUrl}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => (res.ok ? res.blob() : Promise.reject(res.status)))
+      .then(blob => {
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(blob)
+        setBlobUrl(objectUrl)
+      })
+      .catch(() => {
+        if (!cancelled) setImgError(true)
+      })
+
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [photoUrl, token])
+
+  const resolvedSrc = photoUrl?.startsWith('/') ? blobUrl : photoUrl
+  const showImage = resolvedSrc && !imgError
 
   return (
     <div
@@ -58,7 +102,7 @@ export default function UserAvatar({
     >
       {showImage ? (
         <img
-          src={photoUrl}
+          src={resolvedSrc}
           alt={fullName}
           className="h-full w-full object-cover"
           onError={() => setImgError(true)}

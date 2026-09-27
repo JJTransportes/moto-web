@@ -19,9 +19,9 @@ export type GetPublicActiveUsageTermResult =
   | { ok: true; data: PublicUsageTerm }
   | { ok: false; status: number; message: string }
 
-export async function getPublicActiveUsageTerm(): Promise<GetPublicActiveUsageTermResult> {
+export async function getPublicActiveUsageTerm(signal?: AbortSignal): Promise<GetPublicActiveUsageTermResult> {
   try {
-    const res = await fetch(`${BASE_URL}/api/usage-terms/public/active`)
+    const res = await fetch(`${BASE_URL}/api/usage-terms/public/active`, { signal })
 
     if (res.ok) {
       const data = (await res.json()) as PublicUsageTerm
@@ -33,7 +33,8 @@ export async function getPublicActiveUsageTerm(): Promise<GetPublicActiveUsageTe
         ? 'Nenhum termo de uso disponível no momento.'
         : 'Erro ao carregar termos de uso. Tente novamente.'
     return { ok: false, status: res.status, message }
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') throw err
     return { ok: false, status: 0, message: 'Erro de conexão. Tente novamente.' }
   }
 }

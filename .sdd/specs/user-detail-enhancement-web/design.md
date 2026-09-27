@@ -5,6 +5,12 @@
 
 ---
 
+> **Nota de correção (WEB-12, 24/09/2026)**: este spec já foi implementado; dois pontos do texto original não batiam com o código real e foram corrigidos aqui para o documento continuar servindo de referência:
+> - O campo se chama `photoUrl` em `DriverProfile`/`PassengerProfile` (`src/api/userApi.ts`), não `profilePhotoUrl` como escrito originalmente — já ajustado em todo o documento.
+> - A troca/desvinculação de veículo do motorista (`assignDriverVehicle`/`ChangeVehicleRequest`) é feita em **`DriverEditPage.tsx`**, não em `DriverDetailPage.tsx` — o design abaixo nunca menciona essa página porque não fazia parte do escopo original deste spec (foto de perfil + campos de detalhe), mas o leitor não deve procurar a função de troca de veículo em `DriverDetailPage`.
+
+---
+
 ## Visão Geral
 
 **Propósito**: Atualmente, a página de detalhes do motorista (`DriverDetailPage`) exibe dados limitados porque o endpoint `GET /api/drivers/{userId}` retorna apenas campos básicos. A página de detalhes do passageiro (`PassengerDetailPage`) é mais completa, mas ainda omite alguns campos. Este spec propõe enriquecer ambos os endpoints do backend e atualizar os tipos/componentes do front-end para consumir e exibir o conjunto completo de dados. A foto de perfil passará a ser incluída diretamente na resposta do perfil enriquecido, eliminando a chamada separada a `fetchUserProfilePhoto` como dependência primária.
@@ -16,11 +22,11 @@
 - **Frontend**: `DriverProfile` e `PassengerProfile` em `src/api/userApi.ts` atualizados; `DriverDetailPage` expandida para exibir novos campos; `PassengerDetailPage` estendida com campos faltantes; `fetchUserProfilePhoto` mantida como fallback.
 
 ### Objetivos
-- Enriquecer `DriverProfile` com: `rg`, `birthdate`, `isActive`, `access`, `city`, `state`, `createdAt`, `categoryTitle`, `travelCount`, `profilePhotoUrl`.
-- Enriquecer `PassengerProfile` com: `access`, `city`, `state`, `profilePhotoUrl`.
+- Enriquecer `DriverProfile` com: `rg`, `birthdate`, `isActive`, `access`, `city`, `state`, `createdAt`, `categoryTitle`, `travelCount`, `photoUrl`.
+- Enriquecer `PassengerProfile` com: `access`, `city`, `state`, `photoUrl`.
 - Atualizar `DriverDetailPage` para exibir todos os campos novos com layout responsivo.
 - Atualizar `PassengerDetailPage` para exibir campos novos (`access`, `city`, `state`).
-- Eliminar a chamada separada de `fetchUserProfilePhoto` quando `profilePhotoUrl` estiver disponível no perfil.
+- Eliminar a chamada separada de `fetchUserProfilePhoto` quando `photoUrl` estiver disponível no perfil.
 - Preservar todas as funcionalidades existentes (troca de veículo, exclusão, navegação).
 
 ### Não-Objetivos
@@ -47,8 +53,8 @@
 |---------|---------|
 | Padrão | Aditivo — campos novos são acrescentados sem remover ou alterar os existentes |
 | Limites | Backend enriquece DTOs/consultas SQL; front-end atualiza tipos e componentes de exibição |
-| Dados de perfil | `profilePhotoUrl` incluído no perfil enriquecido, eliminando a chamada separada |
-| Fallback | Se backend antigo não retornar `profilePhotoUrl`, manter `fetchUserProfilePhoto` como fallback |
+| Dados de perfil | `photoUrl` incluído no perfil enriquecido, eliminando a chamada separada |
+| Fallback | Se backend antigo não retornar `photoUrl`, manter `fetchUserProfilePhoto` como fallback |
 
 ### Tecnologia
 
@@ -74,13 +80,13 @@ sequenceDiagram
     Admin->>DriverPage: Navega para /users/drivers/:userId
     DriverPage->>API: fetchDriverProfile(token, userId)
     API->>Backend: GET /api/drivers/{userId}
-    Backend-->>API: HTTP 200 { driverId, fullName, email, ..., isActive, travelCount, profilePhotoUrl, ... }
+    Backend-->>API: HTTP 200 { driverId, fullName, email, ..., isActive, travelCount, photoUrl, ... }
     API-->>DriverPage: { ok: true, data: EnrichedDriverProfile }
-    DriverPage->>DriverPage: Exibe todos os campos (profilePhotoUrl direto, sem chamada extra)
+    DriverPage->>DriverPage: Exibe todos os campos (photoUrl direto, sem chamada extra)
     DriverPage-->>Admin: Visualização completa com status, data, localização, estatísticas
 ```
 
-### Fluxo: Perfil sem profilePhotoUrl (fallback)
+### Fluxo: Perfil sem photoUrl (fallback)
 
 ```mermaid
 sequenceDiagram
@@ -90,8 +96,8 @@ sequenceDiagram
 
     Admin->>DriverPage: Navega para detalhes
     DriverPage->>API: fetchDriverProfile(token, userId)
-    API-->>DriverPage: EnrichedDriverProfile (profilePhotoUrl = null)
-    DriverPage->>DriverPage: profilePhotoUrl é null → chama fetchUserProfilePhoto(token, userId)
+    API-->>DriverPage: EnrichedDriverProfile (photoUrl = null)
+    DriverPage->>DriverPage: photoUrl é null → chama fetchUserProfilePhoto(token, userId)
     API-->>DriverPage: UserProfilePhoto (photoUrl)
     DriverPage-->>Admin: Avatar exibido (se disponível)
 ```
@@ -138,7 +144,7 @@ export interface DriverProfile {
   createdAt: string
   categoryTitle: string | null
   travelCount: number
-  profilePhotoUrl: string | null
+  photoUrl: string | null
 }
 ```
 
@@ -166,7 +172,7 @@ export interface PassengerProfile {
   access: string              // 'User' | 'Admin'
   city: string | null
   state: string | null
-  profilePhotoUrl: string | null
+  photoUrl: string | null
 }
 ```
 
@@ -198,8 +204,8 @@ Mesma abordagem: assinatura preservada, tipo de retorno enriquecido.
 | Requisitos | 3.1–3.8 |
 
 **Responsabilidades & Restrições**
-- Se `profilePhotoUrl` estiver presente no `driver`, usar diretamente no `UserAvatar` (sem chamar `fetchUserProfilePhoto`).
-- Se `profilePhotoUrl` for `null`/undefined, manter o fallback existente (`fetchUserProfilePhoto`).
+- Se `photoUrl` estiver presente no `driver`, usar diretamente no `UserAvatar` (sem chamar `fetchUserProfilePhoto`).
+- Se `photoUrl` for `null`/undefined, manter o fallback existente (`fetchUserProfilePhoto`).
 - O cabeçalho deve exibir um badge de status ao lado do nome.
 - A grid de informações deve ser expandida para incluir:
   - **Nome completo** (existente)
@@ -228,8 +234,8 @@ Mesma abordagem: assinatura preservada, tipo de retorno enriquecido.
 | Requisitos | 4.1–4.5 |
 
 **Responsabilidades & Restrições**
-- Se `profilePhotoUrl` estiver presente no `passenger`, usar diretamente (evitando `fetchUserProfilePhoto`).
-- Se `profilePhotoUrl` for `null`, manter fallback existente.
+- Se `photoUrl` estiver presente no `passenger`, usar diretamente (evitando `fetchUserProfilePhoto`).
+- Se `photoUrl` for `null`, manter fallback existente.
 - Adicionar cards na grid existente:
   - **Nível de acesso** (`access`) — entre os cards existentes
   - **Cidade/Estado** (`city`/`state`) — se disponíveis, exibir como "Cidade/Estado"
@@ -251,7 +257,7 @@ Reutilizar o mesmo componente/padrão de badge usado no `UsersPage` e `Passenger
 
 ### Fallback de Foto de Perfil
 
-Para compatibilidade com versões anteriores do backend que ainda não retornam `profilePhotoUrl`:
+Para compatibilidade com versões anteriores do backend que ainda não retornam `photoUrl`:
 
 ```typescript
 // No loadDriver / loadPassenger:
@@ -259,9 +265,9 @@ if (result.ok) {
   const profile = result.data
   setDriver(profile)
 
-  if (profile.profilePhotoUrl) {
+  if (profile.photoUrl) {
     // Campo já veio no perfil enriquecido — usar direto
-    setPhotoUrl(profile.profilePhotoUrl)
+    setPhotoUrl(profile.photoUrl)
   } else {
     // Fallback: chamada separada (backend antigo)
     fetchUserProfilePhoto(token, userId).then(photoResult => {
@@ -277,7 +283,7 @@ if (result.ok) {
 
 | Condição | Ação |
 |----------|------|
-| Backend retorna perfil sem `profilePhotoUrl` | Usar fallback `fetchUserProfilePhoto` |
+| Backend retorna perfil sem `photoUrl` | Usar fallback `fetchUserProfilePhoto` |
 | `isActive` ou outros novos campos ausentes | Tratar como undefined e não exibir (backward compatibility) |
 | Erro 404 | Exibir "não encontrado" (já implementado) |
 | Erro de rede | Exibir mensagem de erro com botão "Tentar novamente" (já implementado) |

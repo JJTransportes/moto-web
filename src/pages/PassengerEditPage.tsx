@@ -37,11 +37,24 @@ function toFormValues(p: PassengerProfile): FormValues {
     rg: maskRg(p.rg),
     registration: p.registration,
     birthdate: p.birthdate.slice(0, 10),
-    address: p.address.lineOne,
-    city: p.address.city,
-    state: p.address.state,
+    address: p.address?.lineOne ?? '',
+    city: p.address?.city ?? p.city ?? '',
+    state: p.address?.state ?? p.state ?? '',
     department: p.departments[0]?.departmentId ?? '',
   }
+}
+
+function validateForm(form: FormValues): FieldErrors {
+  const e: FieldErrors = {}
+  e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
+  e.cpf = validateCpf(form.cpf)
+  e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
+  e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
+  e.birthdate = validateBirthdate(form.birthdate)
+  e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
+  e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
+  e.state = validateUf(form.state)
+  return e
 }
 
 export default function PassengerEditPage() {
@@ -53,6 +66,7 @@ export default function PassengerEditPage() {
   const [form, setForm] = useState<FormValues | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState(false)
+  const [hadMissingFieldsAtLoad, setHadMissingFieldsAtLoad] = useState(false)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
@@ -67,9 +81,20 @@ export default function PassengerEditPage() {
     fetchPassengerProfile(token, passengerId).then(result => {
       if (!result.ok) { setLoadError(true); return }
       setPassenger(result.data)
-      setForm(toFormValues(result.data))
+      const values = toFormValues(result.data)
+      setForm(values)
+      const missing = Object.values(validateForm(values)).some(v => !!v)
+      setHadMissingFieldsAtLoad(missing)
     })
   }, [token, passengerId])
+
+  // Reactive validation: recompute errors on every relevant change so a field
+  // that came empty/invalid from the API is flagged immediately, without
+  // requiring a submit attempt first.
+  useEffect(() => {
+    if (!form) return
+    setErrors(validateForm(form))
+  }, [form])
 
   useEffect(() => {
     if (!token || !passenger) return
@@ -110,46 +135,35 @@ export default function PassengerEditPage() {
   const set = (field: keyof FormValues) => (value: string) =>
     setForm(f => f ? { ...f, [field]: value } : f)
 
-  function validate(): boolean {
-    if (!form) return false
-    const e: FieldErrors = {}
-    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
-    e.cpf = validateCpf(form.cpf)
-    e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
-    e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
-    e.birthdate = validateBirthdate(form.birthdate)
-    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
-    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
-    e.state = validateUf(form.state)
-    setErrors(e)
-    return Object.values(e).every(v => !v)
-  }
+  const isFormValid = Object.values(errors).every(v => !v)
 
-  const isFormComplete =
-    form.fullName.trim() !== '' &&
-    form.fullName.length <= 100 &&
-    form.cpf.trim() !== '' &&
-    form.rg.trim() !== '' &&
-    form.rg.length <= 20 &&
-    form.registration.trim() !== '' &&
-    form.registration.length <= 30 &&
-    form.birthdate.trim() !== '' &&
-    form.address.trim() !== '' &&
-    form.address.length <= 120 &&
-    form.city.trim() !== '' &&
-    form.city.length <= 60 &&
-    form.state.trim() !== ''
+  const missingFieldLabels: Record<keyof FormValues, string> = {
+    fullName: 'Nome completo',
+    cpf: 'CPF',
+    rg: 'RG',
+    registration: 'Matrícula',
+    birthdate: 'Data de nascimento',
+    address: 'Endereço',
+    city: 'Cidade',
+    state: 'Estado',
+    department: 'Departamento',
+  }
+  const missingFields = (Object.keys(errors) as (keyof FormValues)[])
+    .filter(k => !!errors[k])
+    .map(k => missingFieldLabels[k])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (validate()) {
+    const e2 = form ? validateForm(form) : {}
+    setErrors(e2)
+    if (Object.values(e2).every(v => !v)) {
       setModalError(undefined)
       setIsModalOpen(true)
     }
   }
 
   async function handleConfirm(adminCode: string) {
-    if (!token || !form || !passengerId) return
+    if (!token || !form || !passengerId || !passenger) return
     setModalLoading(true)
     setModalError(undefined)
 
@@ -167,6 +181,8 @@ export default function PassengerEditPage() {
       },
       adminCode,
       departmentIds: form.department ? [form.department] : [],
+      // BKD-14: ver comentário equivalente em DriverEditPage.
+      updatedAt: passenger.updatedAt,
     })
 
     setModalLoading(false)
@@ -186,6 +202,13 @@ export default function PassengerEditPage() {
         </Link>
         <h1 className="mt-1 text-2xl font-bold text-gray-800">Editar Passageiro</h1>
       </div>
+
+      {hadMissingFieldsAtLoad && missingFields.length > 0 && (
+        <div className="mb-4 rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+          Este cadastro é antigo e tem campos obrigatórios não preenchidos: <strong>{missingFields.join(', ')}</strong>.
+          Preencha-os abaixo para poder salvar as alterações.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="rounded-xl bg-white p-6 shadow-sm">
@@ -248,7 +271,7 @@ export default function PassengerEditPage() {
           </Link>
           <button
             type="submit"
-            disabled={!isFormComplete}
+            disabled={!isFormValid}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Salvar Alterações

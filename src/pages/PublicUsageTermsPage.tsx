@@ -13,31 +13,36 @@ export default function PublicUsageTermsPage() {
   const [errorMessage, setErrorMessage] = useState<string>()
 
   useEffect(() => {
-    let cancelled = false
+    // WEB-14: AbortController em vez da flag manual `cancelled`.
+    const controller = new AbortController()
 
     async function load() {
       setStatus('loading')
       setErrorMessage(undefined)
 
-      const result = await getPublicActiveUsageTerm()
+      try {
+        const result = await getPublicActiveUsageTerm(controller.signal)
 
-      if (cancelled) return
-
-      if (result.ok) {
-        setTerms(result.data)
-        setStatus('loaded')
-      } else if (result.status === 404) {
-        setStatus('empty')
-      } else {
+        if (result.ok) {
+          setTerms(result.data)
+          setStatus('loaded')
+        } else if (result.status === 404) {
+          setStatus('empty')
+        } else {
+          setStatus('error')
+          setErrorMessage(result.message)
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return
         setStatus('error')
-        setErrorMessage(result.message)
+        setErrorMessage('Erro de conexão. Tente novamente.')
       }
     }
 
     load()
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [])
 

@@ -4,7 +4,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import FormField from '../components/FormField'
 import ConfirmationModal from '../components/ConfirmationModal'
-import { changeDriverVehicle, fetchDriverProfile, updateDriver, type DriverProfile } from '../api/userApi'
+import {
+  changeDriverVehicle,
+  fetchDriverProfile,
+  unassignDriverVehicle,
+  updateDriver,
+  type DriverProfile,
+} from '../api/userApi'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
 import {
   validateFullName,
@@ -46,6 +52,20 @@ function toFormValues(d: DriverProfile): FormValues {
   }
 }
 
+function validateForm(form: FormValues): FieldErrors {
+  const e: FieldErrors = {}
+  e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
+  e.cpf = validateCpf(form.cpf)
+  e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
+  e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
+  e.cnh = validateRequired(form.cnh, 'CNH') ?? validateCnh(form.cnh)
+  e.birthdate = validateBirthdate(form.birthdate)
+  e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
+  e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
+  e.state = validateUf(form.state)
+  return e
+}
+
 export default function DriverEditPage() {
   const { token } = useAuth()
   const { driverId } = useParams<{ driverId: string }>()
@@ -55,24 +75,33 @@ export default function DriverEditPage() {
   const [form, setForm] = useState<FormValues | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState(false)
+  const [hadMissingFieldsAtLoad, setHadMissingFieldsAtLoad] = useState(false)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
 
-  // Vehicle switching state
+  // Vehicle linking/unlinking state
   const [vehicles, setVehicles] = useState<AvailableVehicle[]>([])
   const [vehiclesLoading, setVehiclesLoading] = useState(true)
   const [selectedVehicleId, setSelectedVehicleId] = useState('')
-  const [switching, setSwitching] = useState(false)
-  const [switchError, setSwitchError] = useState<string>()
+  const [vehicleModalOpen, setVehicleModalOpen] = useState(false)
+  const [vehicleModalLoading, setVehicleModalLoading] = useState(false)
+  const [vehicleModalError, setVehicleModalError] = useState<string | undefined>()
+  const [pendingVehicleAction, setPendingVehicleAction] = useState<'link' | 'unlink' | null>(null)
 
   const loadDriver = useCallback(async () => {
     if (!token || !driverId) return
     const result = await fetchDriverProfile(token, driverId)
     if (!result.ok) { setLoadError(true); return }
     setDriver(result.data)
-    setForm(f => f ?? toFormValues(result.data))
+    setForm(f => {
+      if (f) return f
+      const values = toFormValues(result.data)
+      const missing = Object.values(validateForm(values)).some(v => !!v)
+      setHadMissingFieldsAtLoad(missing)
+      return values
+    })
   }, [token, driverId])
 
   const loadAvailableVehicles = useCallback(async () => {
@@ -88,24 +117,13 @@ export default function DriverEditPage() {
     loadAvailableVehicles()
   }, [loadDriver, loadAvailableVehicles])
 
-  const handleSwitchVehicle = async () => {
-    if (!token || !driverId || !selectedVehicleId) return
-    setSwitching(true)
-    setSwitchError(undefined)
-
-    const result = await changeDriverVehicle(token, driverId, selectedVehicleId)
-    if (result.ok) {
-      setSelectedVehicleId('')
-      setSwitchError(undefined)
-      await loadDriver()
-      await loadAvailableVehicles()
-    } else {
-      setSwitchError(result.message)
-    }
-    setSwitching(false)
-  }
-
-  const canSwitch = selectedVehicleId && !switching
+  // Reactive validation: recompute errors on every relevant change so a field
+  // that came empty/invalid from the API is flagged immediately, without
+  // requiring a submit attempt first.
+  useEffect(() => {
+    if (!form) return
+    setErrors(validateForm(form))
+  }, [form])
 
   if (loadError) {
     return (
@@ -131,48 +149,27 @@ export default function DriverEditPage() {
   const set = (field: keyof FormValues) => (value: string) =>
     setForm(f => f ? { ...f, [field]: value } : f)
 
-  function validate(): boolean {
-    if (!form) return false
-    const e: FieldErrors = {}
-    e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
-    e.cpf = validateCpf(form.cpf)
-    e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
-    e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
-    e.cnh = validateRequired(form.cnh, 'CNH') ?? validateCnh(form.cnh)
-    e.birthdate = validateBirthdate(form.birthdate)
-    e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
-    e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
-    e.state = validateUf(form.state)
-    setErrors(e)
-    return Object.values(e).every(v => !v)
-  }
-
-  const isFormComplete =
-    form.fullName.trim() !== '' &&
-    form.fullName.length <= 100 &&
-    form.cpf.trim() !== '' &&
-    form.rg.trim() !== '' &&
-    form.rg.length <= 20 &&
-    form.registration.trim() !== '' &&
-    form.registration.length <= 30 &&
-    form.cnh.trim() !== '' &&
-    form.birthdate.trim() !== '' &&
-    form.address.trim() !== '' &&
-    form.address.length <= 120 &&
-    form.city.trim() !== '' &&
-    form.city.length <= 60 &&
-    form.state.trim() !== ''
+  const isFormValid = Object.values(errors).every(v => !v)
+  const hasVehicle = !!driver.vehicle
+  // Guard rail for WEB-01: a vehicle picked from the dropdown but not yet
+  // confirmed via "Vincular veículo" must never be silently discarded by
+  // "Salvar Alterações" — so saving personal data stays blocked until the
+  // pending selection is either linked or cleared.
+  const hasPendingVehicleSelection = !hasVehicle && selectedVehicleId !== ''
+  const canSave = isFormValid && !hasPendingVehicleSelection
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (validate()) {
+    const e2 = form ? validateForm(form) : {}
+    setErrors(e2)
+    if (Object.values(e2).every(v => !v) && !hasPendingVehicleSelection) {
       setModalError(undefined)
       setIsModalOpen(true)
     }
   }
 
   async function handleConfirm(adminCode: string) {
-    if (!token || !form || !driverId) return
+    if (!token || !form || !driverId || !driver) return
     setModalLoading(true)
     setModalError(undefined)
 
@@ -190,6 +187,9 @@ export default function DriverEditPage() {
         countryCode: 'BR',
       },
       adminCode,
+      // BKD-14: envia de volta o updatedAt lido no GET — o backend rejeita
+      // com 409 se o registro mudou desde então (edição concorrente).
+      updatedAt: driver.updatedAt,
     })
 
     setModalLoading(false)
@@ -201,6 +201,52 @@ export default function DriverEditPage() {
     }
   }
 
+  function openVehicleModal(action: 'link' | 'unlink') {
+    setPendingVehicleAction(action)
+    setVehicleModalError(undefined)
+    setVehicleModalOpen(true)
+  }
+
+  async function handleVehicleConfirm(adminCode: string) {
+    if (!token || !driverId) return
+    setVehicleModalLoading(true)
+    setVehicleModalError(undefined)
+
+    const result = pendingVehicleAction === 'unlink' && driver?.vehicle
+      ? await unassignDriverVehicle(token, driver.vehicle.vehicleId)
+      : await changeDriverVehicle(token, driverId, selectedVehicleId)
+
+    // adminCode is collected for consistency with the rest of this screen's
+    // sensitive actions (WEB-04); the vehicle endpoints don't require it today.
+    void adminCode
+
+    setVehicleModalLoading(false)
+    if (result.ok) {
+      setVehicleModalOpen(false)
+      setPendingVehicleAction(null)
+      setSelectedVehicleId('')
+      await loadDriver()
+      await loadAvailableVehicles()
+    } else {
+      setVehicleModalError(result.message)
+    }
+  }
+
+  const missingFieldLabels: Record<keyof FormValues, string> = {
+    fullName: 'Nome completo',
+    cpf: 'CPF',
+    rg: 'RG',
+    registration: 'Matrícula',
+    cnh: 'CNH',
+    birthdate: 'Data de nascimento',
+    address: 'Endereço',
+    city: 'Cidade',
+    state: 'Estado',
+  }
+  const missingFields = (Object.keys(errors) as (keyof FormValues)[])
+    .filter(k => !!errors[k])
+    .map(k => missingFieldLabels[k])
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
@@ -210,9 +256,17 @@ export default function DriverEditPage() {
         <h1 className="mt-1 text-2xl font-bold text-gray-800">Editar Motorista</h1>
       </div>
 
-      {!driver.address && (
+      {hadMissingFieldsAtLoad && missingFields.length > 0 && (
         <div className="mb-4 rounded-lg bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
-          Este cadastro é antigo e não tinha endereço vinculado. Preencha o endereço abaixo para salvar as alterações.
+          Este cadastro é antigo e tem campos obrigatórios não preenchidos: <strong>{missingFields.join(', ')}</strong>.
+          Preencha-os abaixo para poder salvar as alterações.
+        </div>
+      )}
+
+      {hasPendingVehicleSelection && (
+        <div className="mb-4 rounded-lg bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          Há um veículo selecionado que ainda não foi vinculado. Clique em "Vincular veículo" abaixo
+          antes de salvar, ou a seleção será perdida.
         </div>
       )}
 
@@ -243,13 +297,22 @@ export default function DriverEditPage() {
         </div>
 
         <div className="rounded-xl bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-base font-semibold text-gray-700">Alterar veículo</h2>
-          <p className="mb-4 text-sm text-gray-500">
-            Selecione um veículo disponível para associar a este motorista. O veículo atual será
-            desassociado automaticamente.
-          </p>
+          <h2 className="mb-4 text-base font-semibold text-gray-700">Veículo</h2>
 
-          {vehiclesLoading ? (
+          {hasVehicle ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Veículo vinculado: <strong>{driver.vehicle!.brand} {driver.vehicle!.model} - {driver.vehicle!.plate}</strong>
+              </p>
+              <button
+                type="button"
+                onClick={() => openVehicleModal('unlink')}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Desvincular
+              </button>
+            </div>
+          ) : vehiclesLoading ? (
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               Carregando veículos disponíveis...
@@ -262,6 +325,9 @@ export default function DriverEditPage() {
             </div>
           ) : (
             <div className="space-y-4">
+              <p className="text-sm text-gray-500">
+                Selecione um veículo disponível para associar a este motorista.
+              </p>
               <FormField
                 id="switchVehicle"
                 label="Veículo disponível"
@@ -275,22 +341,12 @@ export default function DriverEditPage() {
               />
               <button
                 type="button"
-                onClick={handleSwitchVehicle}
-                disabled={!canSwitch}
+                onClick={() => openVehicleModal('link')}
+                disabled={!selectedVehicleId}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {switching ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Alterando...
-                  </>
-                ) : (
-                  'Alterar veículo'
-                )}
+                Vincular veículo
               </button>
-              {switchError && (
-                <p className="text-sm text-red-600" role="alert">{switchError}</p>
-              )}
             </div>
           )}
         </div>
@@ -304,7 +360,8 @@ export default function DriverEditPage() {
           </Link>
           <button
             type="submit"
-            disabled={!isFormComplete}
+            disabled={!canSave}
+            title={hasPendingVehicleSelection ? 'Vincule ou limpe o veículo selecionado antes de salvar.' : undefined}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Salvar Alterações
@@ -323,6 +380,24 @@ export default function DriverEditPage() {
         }}
         loading={modalLoading}
         error={modalError}
+      />
+
+      <ConfirmationModal
+        isOpen={vehicleModalOpen}
+        title={pendingVehicleAction === 'unlink' ? 'Confirmar desvínculo de veículo' : 'Confirmar vínculo de veículo'}
+        description={
+          pendingVehicleAction === 'unlink'
+            ? 'Digite seu código de administrador para confirmar o desvínculo do veículo atual deste motorista.'
+            : 'Digite seu código de administrador para confirmar o vínculo do veículo selecionado a este motorista. O veículo atual, se houver, será desassociado automaticamente.'
+        }
+        onConfirm={handleVehicleConfirm}
+        onCancel={() => {
+          setVehicleModalOpen(false)
+          setPendingVehicleAction(null)
+          setVehicleModalError(undefined)
+        }}
+        loading={vehicleModalLoading}
+        error={vehicleModalError}
       />
     </div>
   )

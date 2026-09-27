@@ -65,13 +65,13 @@ export default function PartitionsTravelsTable({ partitions }: PartitionsTravels
     return copy
   }, [partitions, sortKey, sortDir])
 
-  const headerClass = 'cursor-pointer p-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 hover:text-gray-900'
+  const headerClass = 'cursor-pointer p-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-cobalto'
 
   return (
-    <div className="overflow-x-auto rounded-lg bg-white shadow-sm">
+    <div className="mo-surface overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50">
+          <tr className="border-b border-[var(--border-default)] bg-[var(--porcelana-50)]">
             <th
               className={headerClass}
               onClick={() => toggleSort('publicPartitionName')}
