@@ -36,38 +36,39 @@ export function useDashboardData(): UseDashboardDataResult {
       return
     }
 
-    let cancelled = false
+    // WEB-14: AbortController em vez da flag manual `cancelled` — além de
+    // pular o `setState` pós-desmontagem/re-efeito, agora cancela mesmo a
+    // requisição em voo (o flag antigo deixava o fetch rodando até o fim à
+    // toa quando token/retryCount mudavam rápido, ex. clique duplo em retry).
+    const controller = new AbortController()
     setLoading(true)
     setError(null)
 
     Promise.all([
-      fetchStats(token),
-      fetchPartitionsTravels(token),
-      fetchPendingRegistrations(token),
+      fetchStats(token, controller.signal),
+      fetchPartitionsTravels(token, controller.signal),
+      fetchPendingRegistrations(token, 1, 10, controller.signal),
     ])
       .then(([stats, partitions, regsResult]) => {
-        if (!cancelled) {
-          setData({
-            stats,
-            partitions,
-            pendingRegistrations: regsResult.items,
-          })
-          setLoading(false)
-        }
+        setData({
+          stats,
+          partitions,
+          pendingRegistrations: regsResult.items,
+        })
+        setLoading(false)
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          const message =
-            err instanceof Error
-              ? err.message
-              : 'Erro ao carregar dados do dashboard.'
-          setError(message)
-          setLoading(false)
-        }
+        if (err instanceof DOMException && err.name === 'AbortError') return
+        const message =
+          err instanceof Error
+            ? err.message
+            : 'Erro ao carregar dados do dashboard.'
+        setError(message)
+        setLoading(false)
       })
 
     return () => {
-      cancelled = true
+      controller.abort()
     }
   }, [token, retryCount])
 

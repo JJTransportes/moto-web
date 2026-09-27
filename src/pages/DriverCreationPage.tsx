@@ -6,7 +6,6 @@ import FormField from '../components/FormField'
 import PasswordRequirements from '../components/PasswordRequirements'
 import { fetchAvailableVehicles, type AvailableVehicle } from '../api/vehicleApi'
 import {
-  isPasswordValid,
   validateBirthdate,
   validateCnh,
   validateCpf,
@@ -100,7 +99,12 @@ export default function DriverCreationPage() {
     serverGuard.onFieldChange(field, value)
   }
 
-  function validate(): boolean {
+  // WEB-13: `validate()` e o antigo `isFormComplete` reimplementavam as
+  // mesmas regras em dois lugares (uma pra habilitar o botão, outra pra
+  // bloquear o submit) e podiam divergir silenciosamente. `computeErrors()`
+  // é agora a única fonte de verdade; `validate()` só aplica o resultado ao
+  // estado de erros, e `isFormComplete` é derivado dele.
+  function computeErrors(): FormErrors {
     const e: FormErrors = {}
     e.fullName = validateFullName(form.fullName) ?? validateMaxLength(form.fullName, 100, 'Nome completo') ?? validateSafeText(form.fullName, 'Nome completo')
     e.cpf = validateCpf(form.cpf)
@@ -116,33 +120,16 @@ export default function DriverCreationPage() {
     e.confirmEmail = validateConfirmEmail(form.email, form.confirmEmail)
     e.initialPassword = validatePassword(form.initialPassword)
     e.confirmPassword = validateConfirmPassword(form.initialPassword, form.confirmPassword)
+    return e
+  }
+
+  function validate(): boolean {
+    const e = computeErrors()
     setErrors(e)
     return Object.values(e).every(v => !v)
   }
 
-  const isFormComplete =
-    form.fullName.trim() !== '' &&
-    form.fullName.length <= 100 &&
-    form.cpf.trim() !== '' &&
-    form.rg.trim() !== '' &&
-    form.rg.length <= 20 &&
-    form.registration.trim() !== '' &&
-    form.registration.length <= 30 &&
-    form.cnh.trim() !== '' &&
-    form.birthdate.trim() !== '' &&
-    form.address.trim() !== '' &&
-    form.address.length <= 120 &&
-    form.city.trim() !== '' &&
-    form.city.length <= 60 &&
-    form.state.trim() !== '' &&
-    form.vehicleId.trim() !== '' &&
-    form.email.trim() !== '' &&
-    form.email.length <= 100 &&
-    form.confirmEmail.trim() !== '' &&
-    form.email.trim() === form.confirmEmail.trim() &&
-    isPasswordValid(form.initialPassword) &&
-    form.confirmPassword !== '' &&
-    form.initialPassword === form.confirmPassword
+  const isFormComplete = Object.values(computeErrors()).every(v => !v)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

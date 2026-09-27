@@ -145,7 +145,10 @@ describe('PassengerDetailPage', () => {
       expect(screen.getByText('Rua das Flores, 123')).toBeInTheDocument()
       expect(screen.getByText('Apto 45')).toBeInTheDocument()
       expect(screen.getByText('Centro')).toBeInTheDocument()
-      expect(screen.getByText('São Paulo/SP')).toBeInTheDocument()
+      // "São Paulo/SP" aparece 2x de propósito agora: no card-resumo do topo
+      // (lido de address.city/state, fonte única desde a correção de WEB-03)
+      // e na seção "Endereço" mais abaixo.
+      expect(screen.getAllByText('São Paulo/SP').length).toBeGreaterThan(0)
       expect(screen.getByText('01234-567')).toBeInTheDocument()
       expect(screen.getByText('BR')).toBeInTheDocument()
     })

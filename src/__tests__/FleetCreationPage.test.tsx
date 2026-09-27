@@ -78,12 +78,18 @@ describe('FleetCreationPage', () => {
 
   it('shows validation error for invalid year', async () => {
     mockedListCategories.mockResolvedValueOnce({ ok: true, data: CATEGORIES })
-    renderPage()
+    const { container } = renderPage()
     await waitFor(() => screen.getByText('Sedan'))
     fillRequiredFields()
     fireEvent.change(screen.getByLabelText('Categoria'), { target: { value: 'cat-1' } })
     fireEvent.change(screen.getByLabelText('Ano'), { target: { value: '1800' } })
-    fireEvent.click(screen.getByText('Cadastrar Veículo'))
+
+    // WEB-13: `isFormComplete` agora reflete as mesmas regras de `validate()`
+    // (inclusive ano fora do range), então o botão fica corretamente
+    // desabilitado aqui — um clique nele não dispara nada. Submete o form
+    // diretamente para exercitar `validate()`/`handleSubmit` mesmo assim.
+    expect(screen.getByText('Cadastrar Veículo')).toBeDisabled()
+    fireEvent.submit(container.querySelector('form')!)
 
     await waitFor(() => {
       expect(screen.getByText('Ano inválido.')).toBeInTheDocument()

@@ -45,8 +45,17 @@ export type ListAvailableVehiclesResult =
   | { ok: true; data: AvailableVehicle[] }
   | { ok: false; status: number; message: string }
 
+// WEB-06: paginado server-side (mesmo padrão de listDrivers/listPassengers
+// em userListApi.ts) — antes buscava a frota inteira numa chamada só.
+export interface PaginatedVehicleListResponse {
+  items: Vehicle[]
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
 export type ListVehiclesResult =
-  | { ok: true; data: Vehicle[] }
+  | { ok: true; data: PaginatedVehicleListResponse }
   | { ok: false; status: number; message: string }
 
 export type GetVehicleResult =
@@ -67,8 +76,26 @@ export async function fetchAvailableVehicles(token: string): Promise<ListAvailab
   return { ok: false, status: result.status, message: 'Erro ao carregar veículos. Tente novamente.' }
 }
 
-export async function fetchVehicles(token: string): Promise<ListVehiclesResult> {
-  const result = await fetchProtected<Vehicle[]>('/api/vehicles', token)
+function sanitizeSearchTerm(value: string): string {
+  const trimmed = value.trim()
+  if (/[.\-/]/.test(trimmed) && /^[0-9A-Za-z.\-/]+$/.test(trimmed)) {
+    return trimmed.replace(/[.\-/]/g, '')
+  }
+  return trimmed
+}
+
+export async function fetchVehicles(
+  token: string,
+  page: number,
+  pageSize: number,
+  search?: string,
+): Promise<ListVehiclesResult> {
+  const params = new URLSearchParams()
+  params.set('page', String(page))
+  params.set('pageSize', String(pageSize))
+  if (search) params.set('search', sanitizeSearchTerm(search))
+
+  const result = await fetchProtected<PaginatedVehicleListResponse>(`/api/vehicles?${params.toString()}`, token)
   if (result.ok) return { ok: true, data: result.data }
   return { ok: false, status: result.status, message: 'Erro ao carregar veículos. Tente novamente.' }
 }

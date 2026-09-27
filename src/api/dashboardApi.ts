@@ -2,12 +2,13 @@ import type { StatsResponse, PartitionTravelSummary, PendingRegistration } from 
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? ''
 
-export async function fetchStats(token: string): Promise<StatsResponse> {
+export async function fetchStats(token: string, signal?: AbortSignal): Promise<StatsResponse> {
   const res = await fetch(`${BASE_URL}/api/dashboard/stats`, {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
+    signal,
   })
 
   if (!res.ok) {
@@ -17,12 +18,13 @@ export async function fetchStats(token: string): Promise<StatsResponse> {
   return (await res.json()) as StatsResponse
 }
 
-export async function fetchPartitionsTravels(token: string): Promise<PartitionTravelSummary[]> {
+export async function fetchPartitionsTravels(token: string, signal?: AbortSignal): Promise<PartitionTravelSummary[]> {
   const res = await fetch(`${BASE_URL}/api/dashboard/partitions-travels`, {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
+    signal,
   })
 
   if (!res.ok) {
@@ -35,7 +37,8 @@ export async function fetchPartitionsTravels(token: string): Promise<PartitionTr
 export async function fetchPendingRegistrations(
   token: string,
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  signal?: AbortSignal
 ): Promise<{ items: PendingRegistration[]; totalCount: number }> {
   const res = await fetch(
     `${BASE_URL}/api/registrations?page=${page}&pageSize=${pageSize}`,
@@ -44,6 +47,7 @@ export async function fetchPendingRegistrations(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      signal,
     }
   )
 

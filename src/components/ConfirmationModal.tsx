@@ -49,7 +49,7 @@ export default function ConfirmationModal({
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div className="mo-surface w-full max-w-md p-6">
         <h2 id="modal-title" className="mb-2 text-lg font-semibold text-gray-800">
           {title}
         </h2>
@@ -66,7 +66,7 @@ export default function ConfirmationModal({
           onChange={e => setAdminCode(e.target.value)}
           disabled={loading}
           placeholder="Digite sua senha"
-          className="mb-4 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+          className="mo-focus mb-4 min-h-12 w-full rounded-[18px] border border-[var(--border-default)] bg-[var(--porcelana-50)] px-4 py-3 text-sm outline-none disabled:opacity-60"
         />
 
         {error && (
@@ -80,7 +80,7 @@ export default function ConfirmationModal({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="mo-focus min-h-12 rounded-full border border-[var(--border-default)] px-5 py-2 text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--accent-soft)] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -88,7 +88,8 @@ export default function ConfirmationModal({
             type="button"
             onClick={() => onConfirm(adminCode)}
             disabled={loading || !adminCode}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="mo-focus min-h-12 rounded-full bg-cobalto px-5 py-2 text-sm font-semibold text-white shadow-moto hover:brightness-105 disabled:opacity-50"
+            aria-busy={loading || undefined}
           >
             {loading ? 'Aguarde...' : 'Confirmar'}
           </button>

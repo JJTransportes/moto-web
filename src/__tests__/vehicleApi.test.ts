@@ -60,16 +60,24 @@ describe('vehicleApi', () => {
   })
 
   describe('fetchVehicles', () => {
-    it('returns data on success', async () => {
-      mockedFetch.mockResolvedValueOnce({ ok: true, data: [VEHICLE] })
-      const result = await fetchVehicles(TOKEN)
-      expect(result).toEqual({ ok: true, data: [VEHICLE] })
-      expect(mockedFetch).toHaveBeenCalledWith('/api/vehicles', TOKEN)
+    it('returns paginated data on success', async () => {
+      const paginated = { items: [VEHICLE], page: 1, pageSize: 20, totalCount: 1 }
+      mockedFetch.mockResolvedValueOnce({ ok: true, data: paginated })
+      const result = await fetchVehicles(TOKEN, 1, 20)
+      expect(result).toEqual({ ok: true, data: paginated })
+      expect(mockedFetch).toHaveBeenCalledWith('/api/vehicles?page=1&pageSize=20', TOKEN)
+    })
+
+    it('includes search param when provided', async () => {
+      const paginated = { items: [], page: 1, pageSize: 20, totalCount: 0 }
+      mockedFetch.mockResolvedValueOnce({ ok: true, data: paginated })
+      await fetchVehicles(TOKEN, 1, 20, 'corolla')
+      expect(mockedFetch).toHaveBeenCalledWith('/api/vehicles?page=1&pageSize=20&search=corolla', TOKEN)
     })
 
     it('returns error on failure', async () => {
       mockedFetch.mockResolvedValueOnce({ ok: false, status: 500 })
-      const result = await fetchVehicles(TOKEN)
+      const result = await fetchVehicles(TOKEN, 1, 20)
       expect(result.ok).toBe(false)
       if (!result.ok) expect(result.status).toBe(500)
     })
