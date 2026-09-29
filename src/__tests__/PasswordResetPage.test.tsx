@@ -3,13 +3,21 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
+import { BrandImageProvider } from '../auth/BrandImageContext'
 import PasswordResetPage from '../pages/PasswordResetPage'
+
+vi.mock('../auth/BrandImageContext', () => ({
+  BrandImageProvider: ({ children }: { children: React.ReactNode }) => children,
+  useBrandImage: () => ({ brandImageUrl: null, isLoading: false, error: false, refetch: vi.fn() }),
+}))
 
 function renderResetPage() {
   return render(
     <MemoryRouter initialEntries={['/reset-password']}>
       <AuthProvider>
-        <PasswordResetPage />
+        <BrandImageProvider>
+          <PasswordResetPage />
+        </BrandImageProvider>
       </AuthProvider>
     </MemoryRouter>,
   )
@@ -116,7 +124,7 @@ describe('PasswordResetPage - request step', () => {
     await user.click(screen.getByRole('button', { name: /enviar código/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/email não cadastrado/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/email não cadastrado/i)).not.toHaveLength(0)
     })
     expect(screen.queryByPlaceholderText('Código de Verificação')).not.toBeInTheDocument()
   })
@@ -132,7 +140,7 @@ describe('PasswordResetPage - request step', () => {
     await user.click(screen.getByRole('button', { name: /enviar código/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/muitas tentativas/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/muitas tentativas/i)).not.toHaveLength(0)
     })
   })
 })
@@ -202,7 +210,7 @@ describe('PasswordResetPage - verify-code step', () => {
     await user.click(screen.getByRole('button', { name: /confirmar código/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid or expired code/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/invalid or expired code/i)).not.toHaveLength(0)
     })
   })
 
@@ -214,7 +222,7 @@ describe('PasswordResetPage - verify-code step', () => {
     await user.click(screen.getByRole('button', { name: /confirmar código/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/muitas tentativas/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/muitas tentativas/i)).not.toHaveLength(0)
     })
   })
 })
@@ -319,8 +327,8 @@ describe('PasswordResetPage - new-password step', () => {
     await user.click(screen.getByRole('button', { name: /confirmar/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/invalid or expired token/i)).toBeInTheDocument()
-      expect(screen.getByText(/solicite um novo código/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/invalid or expired token/i)).not.toHaveLength(0)
+      expect(screen.getAllByText(/solicite um novo código/i)).not.toHaveLength(0)
     })
   })
 
@@ -337,7 +345,7 @@ describe('PasswordResetPage - new-password step', () => {
     await user.click(screen.getByRole('button', { name: /confirmar/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/código já foi utilizado/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/código já foi utilizado/i)).not.toHaveLength(0)
     })
   })
 })

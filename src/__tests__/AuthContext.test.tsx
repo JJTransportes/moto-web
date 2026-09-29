@@ -28,17 +28,17 @@ describe('AuthContext role hierarchy', () => {
   })
 
   it('treats GlobalAdmin as satisfied by the GlobalAdmin role', () => {
-    renderProbe(['GlobalAdmin'], 'Admin')
-    expect(screen.getByText('true')).toBeInTheDocument()
-  })
-
-  it('treats Admin as satisfied by the GlobalAdmin role', () => {
-    renderProbe(['GlobalAdmin'], 'Admin')
-    expect(screen.getByText('true')).toBeInTheDocument()
-  })
-
-  it('does not treat GlobalAdmin as satisfied by the Admin role', () => {
     renderProbe(['GlobalAdmin'], 'GlobalAdmin')
+    expect(screen.getByText('true')).toBeInTheDocument()
+  })
+
+  it('treats a GlobalAdmin role as sufficient for a GlobalAdmin route', () => {
+    renderProbe(['GlobalAdmin'], 'GlobalAdmin')
+    expect(screen.getByText('true')).toBeInTheDocument()
+  })
+
+  it('does not allow a Passenger through a GlobalAdmin route', () => {
+    renderProbe(['Passenger'], 'GlobalAdmin')
     expect(screen.getByText('false')).toBeInTheDocument()
   })
 

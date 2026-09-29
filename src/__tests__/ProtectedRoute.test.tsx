@@ -57,7 +57,7 @@ describe('ProtectedRoute - role enforcement', () => {
     }
 
     return render(
-      <MemoryRouter initialEntries={['/admin']}>
+      <MemoryRouter initialEntries={['/global-admin']}>
         <AuthProvider>
           <Routes>
             <Route element={<ProtectedRoute requiredRole={requiredRole} />}>
@@ -76,9 +76,9 @@ describe('ProtectedRoute - role enforcement', () => {
     expect(screen.getByText('GlobalAdmin Content')).toBeInTheDocument()
   })
 
-  it('allows GlobalAdmin users through Admin-protected routes', () => {
+  it('forbids access for an unknown required role', () => {
     renderWithRole('Admin', 'GlobalAdmin')
-    expect(screen.getByText('GlobalAdmin Content')).toBeInTheDocument()
+    expect(screen.getByText('Forbidden')).toBeInTheDocument()
   })
 
   it('shows forbidden when user lacks required role', () => {
