@@ -74,7 +74,9 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await selectUnitAndDepartment(user)
 
   await user.type(screen.getByLabelText('E-mail'), 'maria@example.com')
+  await user.type(screen.getByLabelText('Confirmar e-mail'), 'maria@example.com')
   await user.type(screen.getByLabelText('Senha inicial'), 'Senha@123')
+  await user.type(screen.getByLabelText('Confirmar senha'), 'Senha@123')
 }
 
 describe('PassengerCreationPage', () => {
