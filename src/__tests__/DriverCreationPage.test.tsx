@@ -58,7 +58,9 @@ function fillValidForm() {
   fireEvent.change(screen.getByLabelText('Estado'), { target: { value: 'SP' } })
   fireEvent.change(screen.getByLabelText('Selecione o veículo'), { target: { value: 'v-001' } })
   fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'joao@example.com' } })
+  fireEvent.change(screen.getByLabelText('Confirmar e-mail'), { target: { value: 'joao@example.com' } })
   fireEvent.change(screen.getByLabelText('Senha inicial'), { target: { value: 'Senha@123' } })
+  fireEvent.change(screen.getByLabelText('Confirmar senha'), { target: { value: 'Senha@123' } })
 }
 
 describe('DriverCreationPage', () => {
