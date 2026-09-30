@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { Loader2, Pencil } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
@@ -99,6 +99,8 @@ export default function DriverEditPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [editingPassword, setEditingPassword] = useState(false)
 
   // Vehicle linking/unlinking state
   const [vehicles, setVehicles] = useState<AvailableVehicle[]>([])
@@ -308,19 +310,20 @@ export default function DriverEditPage() {
             <FormField id="cnh" label="CNH" required value={form.cnh} onChange={set('cnh')} error={errors.cnh} placeholder="CNH" maxLength={11} mask={maskCnh} digitsOnly />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
             <div className="col-span-2">
-              <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="nome@exemplo.com" softMaxLength={100} />
+              <div className="relative">
+                <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="nome@exemplo.com" softMaxLength={100} disabled={!editingEmail} />
+                {!editingEmail && <button type="button" aria-label="Editar e-mail" onClick={() => setEditingEmail(true)} className="absolute bottom-2.5 right-3 rounded p-1.5 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>}
+              </div>
             </div>
+            {editingEmail && <div className="col-span-2"><FormField id="confirmEmail" label="Confirmar e-mail" required type="email" value={form.confirmEmail} onChange={set('confirmEmail')} error={errors.confirmEmail} placeholder="Confirme o e-mail" softMaxLength={100} /></div>}
             <div className="col-span-2">
-              <FormField id="confirmEmail" label="Confirmar e-mail" required type="email" value={form.confirmEmail} onChange={set('confirmEmail')} error={errors.confirmEmail} placeholder="Confirme o e-mail" softMaxLength={100} />
+              <div className="relative">
+                <FormField id="newPassword" label="Nova senha temporária" type={editingPassword ? 'password' : 'text'} value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Senha não alterada" softMaxLength={72} disabled={!editingPassword} />
+                {!editingPassword && <button type="button" aria-label="Editar senha" onClick={() => setEditingPassword(true)} className="absolute bottom-2.5 right-3 rounded p-1.5 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>}
+              </div>
+              {editingPassword && <><PasswordRequirements password={form.newPassword} /><p className="mt-1 text-xs text-gray-500">A senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p></>}
             </div>
-            <div className="col-span-2">
-              <FormField id="newPassword" label="Nova senha temporária" type="password" value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Deixe em branco para não alterar" softMaxLength={72} />
-              <PasswordRequirements password={form.newPassword} />
-              <p className="mt-1 text-xs text-gray-500">Quando informada, a senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p>
-            </div>
-            <div className="col-span-2">
-              <FormField id="confirmPassword" label="Confirmar senha" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} placeholder="Confirme a senha" softMaxLength={72} />
-            </div>
+            {editingPassword && <div className="col-span-2"><FormField id="confirmPassword" label="Confirmar senha" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} placeholder="Confirme a senha" softMaxLength={72} /></div>}
           </div>
         </div>
 
