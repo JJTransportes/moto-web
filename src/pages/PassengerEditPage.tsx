@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import FormField from '../components/FormField'
 import ConfirmationModal from '../components/ConfirmationModal'
+import PasswordRequirements from '../components/PasswordRequirements'
 import { fetchPassengerProfile, updatePassenger, type PassengerProfile } from '../api/userApi'
 import { fetchPartitionDepartments, type DepartmentOption } from '../api/publicPartitionApi'
 import {
@@ -15,6 +16,8 @@ import {
   validateSafeText,
   validateEmail,
   validatePassword,
+  validateConfirmEmail,
+  validateConfirmPassword,
 } from '../utils/validators'
 import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
 
@@ -29,7 +32,9 @@ interface FormValues {
   state: string
   department: string
   email: string
+  confirmEmail: string
   newPassword: string
+  confirmPassword: string
 }
 
 type FieldErrors = Partial<FormValues>
@@ -46,7 +51,9 @@ function toFormValues(p: PassengerProfile): FormValues {
     state: p.address?.state ?? p.state ?? '',
     department: p.departments[0]?.departmentId ?? '',
     email: p.email,
+    confirmEmail: p.email,
     newPassword: '',
+    confirmPassword: '',
   }
 }
 
@@ -61,7 +68,11 @@ function validateForm(form: FormValues): FieldErrors {
   e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
   e.state = validateUf(form.state)
   e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
-  if (form.newPassword) e.newPassword = validatePassword(form.newPassword)
+  e.confirmEmail = validateConfirmEmail(form.email, form.confirmEmail)
+  if (form.newPassword || form.confirmPassword) {
+    e.newPassword = validatePassword(form.newPassword)
+    e.confirmPassword = validateConfirmPassword(form.newPassword, form.confirmPassword)
+  }
   return e
 }
 
@@ -156,7 +167,9 @@ export default function PassengerEditPage() {
     state: 'Estado',
     department: 'Departamento',
     email: 'E-mail',
+    confirmEmail: 'Confirmar e-mail',
     newPassword: 'Nova senha temporária',
+    confirmPassword: 'Confirmar senha',
   }
   const missingFields = (Object.keys(errors) as (keyof FormValues)[])
     .filter(k => !!errors[k])
@@ -264,8 +277,15 @@ export default function PassengerEditPage() {
               <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="nome@exemplo.com" softMaxLength={100} />
             </div>
             <div className="col-span-2">
-              <FormField id="newPassword" label="Nova senha temporária" type="password" value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Deixe em branco para não alterar" />
+              <FormField id="confirmEmail" label="Confirmar e-mail" required type="email" value={form.confirmEmail} onChange={set('confirmEmail')} error={errors.confirmEmail} placeholder="Confirme o e-mail" softMaxLength={100} />
+            </div>
+            <div className="col-span-2">
+              <FormField id="newPassword" label="Nova senha temporária" type="password" value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Deixe em branco para não alterar" softMaxLength={72} />
+              <PasswordRequirements password={form.newPassword} />
               <p className="mt-1 text-xs text-gray-500">Quando informada, a senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p>
+            </div>
+            <div className="col-span-2">
+              <FormField id="confirmPassword" label="Confirmar senha" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} placeholder="Confirme a senha" softMaxLength={72} />
             </div>
           </div>
         </div>
