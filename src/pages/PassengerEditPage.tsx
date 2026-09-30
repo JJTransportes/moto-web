@@ -298,7 +298,7 @@ export default function PassengerEditPage() {
                 <FormField id="newPassword" label="Nova senha temporária" type={editingPassword ? 'password' : 'text'} value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Senha não alterada" softMaxLength={72} disabled={!editingPassword} />
                 {!editingPassword && <button type="button" aria-label="Editar senha" onClick={() => setEditingPassword(true)} className="absolute bottom-2.5 right-3 rounded p-1.5 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>}
               </div>
-              {editingPassword && <><div className="mb-3"><PasswordRequirements password={form.newPassword} /></div><p className="mt-1 text-xs text-gray-500">A senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p></>}
+              {editingPassword && <><div className="mt-3 mb-3"><PasswordRequirements password={form.newPassword} /></div><p className="mt-1 text-xs text-gray-500">A senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p></>}
             </div>
             {editingPassword && <div className="col-span-2"><FormField id="confirmPassword" label="Confirmar senha" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} placeholder="Confirme a senha" softMaxLength={72} /><button type="button" onClick={cancelPasswordEdit} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-gray-900"><X size={14} /> Cancelar edição da senha</button></div>}
           </div>
