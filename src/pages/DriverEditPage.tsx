@@ -92,6 +92,7 @@ export default function DriverEditPage() {
 
   const [driver, setDriver] = useState<DriverProfile | null>(null)
   const [form, setForm] = useState<FormValues | null>(null)
+  const [initialForm, setInitialForm] = useState<FormValues | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState(false)
   const [hadMissingFieldsAtLoad, setHadMissingFieldsAtLoad] = useState(false)
@@ -119,6 +120,7 @@ export default function DriverEditPage() {
     setForm(f => {
       if (f) return f
       const values = toFormValues(result.data)
+      setInitialForm(values)
       const missing = Object.values(validateForm(values)).some(v => !!v)
       setHadMissingFieldsAtLoad(missing)
       return values
@@ -177,7 +179,20 @@ export default function DriverEditPage() {
   // "Salvar Alterações" — so saving personal data stays blocked until the
   // pending selection is either linked or cleared.
   const hasPendingVehicleSelection = !hasVehicle && selectedVehicleId !== ''
-  const canSave = isFormValid && !hasPendingVehicleSelection
+  const hasPersistedChanges = initialForm !== null && (
+    form.fullName !== initialForm.fullName ||
+    form.cpf !== initialForm.cpf ||
+    form.rg !== initialForm.rg ||
+    form.registration !== initialForm.registration ||
+    form.cnh !== initialForm.cnh ||
+    form.birthdate !== initialForm.birthdate ||
+    form.address !== initialForm.address ||
+    form.city !== initialForm.city ||
+    form.state !== initialForm.state ||
+    form.email !== initialForm.email ||
+    form.newPassword !== ''
+  )
+  const canSave = isFormValid && !hasPendingVehicleSelection && hasPersistedChanges
 
   function cancelEmailEdit() {
     setForm(f => f ? { ...f, email: driver?.email ?? f.email, confirmEmail: driver?.email ?? f.confirmEmail } : f)
@@ -193,7 +208,7 @@ export default function DriverEditPage() {
     e.preventDefault()
     const e2 = form ? validateForm(form) : {}
     setErrors(e2)
-    if (Object.values(e2).every(v => !v) && !hasPendingVehicleSelection) {
+    if (Object.values(e2).every(v => !v) && !hasPendingVehicleSelection && hasPersistedChanges) {
       setModalError(undefined)
       setIsModalOpen(true)
     }

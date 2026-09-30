@@ -84,6 +84,7 @@ export default function PassengerEditPage() {
 
   const [passenger, setPassenger] = useState<PassengerProfile | null>(null)
   const [form, setForm] = useState<FormValues | null>(null)
+  const [initialForm, setInitialForm] = useState<FormValues | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState(false)
   const [hadMissingFieldsAtLoad, setHadMissingFieldsAtLoad] = useState(false)
@@ -105,6 +106,7 @@ export default function PassengerEditPage() {
       setPassenger(result.data)
       const values = toFormValues(result.data)
       setForm(values)
+      setInitialForm(values)
       const missing = Object.values(validateForm(values)).some(v => !!v)
       setHadMissingFieldsAtLoad(missing)
     })
@@ -158,6 +160,19 @@ export default function PassengerEditPage() {
     setForm(f => f ? { ...f, [field]: value } : f)
 
   const isFormValid = Object.values(errors).every(v => !v)
+  const hasPersistedChanges = initialForm !== null && (
+    form.fullName !== initialForm.fullName ||
+    form.cpf !== initialForm.cpf ||
+    form.rg !== initialForm.rg ||
+    form.registration !== initialForm.registration ||
+    form.birthdate !== initialForm.birthdate ||
+    form.address !== initialForm.address ||
+    form.city !== initialForm.city ||
+    form.state !== initialForm.state ||
+    form.department !== initialForm.department ||
+    form.email !== initialForm.email ||
+    form.newPassword !== ''
+  )
 
   function cancelEmailEdit() {
     setForm(f => f ? { ...f, email: passenger?.email ?? f.email, confirmEmail: passenger?.email ?? f.confirmEmail } : f)
@@ -192,7 +207,7 @@ export default function PassengerEditPage() {
     e.preventDefault()
     const e2 = form ? validateForm(form) : {}
     setErrors(e2)
-    if (Object.values(e2).every(v => !v)) {
+    if (Object.values(e2).every(v => !v) && hasPersistedChanges) {
       setModalError(undefined)
       setIsModalOpen(true)
     }
@@ -324,7 +339,7 @@ export default function PassengerEditPage() {
           </Link>
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || !hasPersistedChanges}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Salvar Alterações
