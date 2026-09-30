@@ -21,6 +21,8 @@ import {
   validateMaxLength,
   validateRequired,
   validateSafeText,
+  validateEmail,
+  validatePassword,
 } from '../utils/validators'
 import { maskCpf, maskRg, maskCnh, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
 
@@ -34,6 +36,8 @@ interface FormValues {
   address: string
   city: string
   state: string
+  email: string
+  newPassword: string
 }
 
 type FieldErrors = Partial<FormValues>
@@ -49,6 +53,8 @@ function toFormValues(d: DriverProfile): FormValues {
     address: d.address?.lineOne ?? '',
     city: d.address?.city ?? d.city ?? '',
     state: d.address?.state ?? d.state ?? '',
+    email: d.email,
+    newPassword: '',
   }
 }
 
@@ -63,6 +69,8 @@ function validateForm(form: FormValues): FieldErrors {
   e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
   e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
   e.state = validateUf(form.state)
+  e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
+  if (form.newPassword) e.newPassword = validatePassword(form.newPassword)
   return e
 }
 
@@ -187,6 +195,8 @@ export default function DriverEditPage() {
         countryCode: 'BR',
       },
       adminCode,
+      email: form.email,
+      newPassword: form.newPassword || undefined,
       // BKD-14: envia de volta o updatedAt lido no GET — o backend rejeita
       // com 409 se o registro mudou desde então (edição concorrente).
       updatedAt: driver.updatedAt,
@@ -242,6 +252,8 @@ export default function DriverEditPage() {
     address: 'Endereço',
     city: 'Cidade',
     state: 'Estado',
+    email: 'E-mail',
+    newPassword: 'Nova senha temporária',
   }
   const missingFields = (Object.keys(errors) as (keyof FormValues)[])
     .filter(k => !!errors[k])
@@ -282,6 +294,13 @@ export default function DriverEditPage() {
             <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
             <FormField id="cnh" label="CNH" required value={form.cnh} onChange={set('cnh')} error={errors.cnh} placeholder="CNH" maxLength={11} mask={maskCnh} digitsOnly />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
+            <div className="col-span-2">
+              <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="nome@exemplo.com" softMaxLength={100} />
+            </div>
+            <div className="col-span-2">
+              <FormField id="newPassword" label="Nova senha temporária" type="password" value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Deixe em branco para não alterar" />
+              <p className="mt-1 text-xs text-gray-500">Quando informada, a senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p>
+            </div>
           </div>
         </div>
 

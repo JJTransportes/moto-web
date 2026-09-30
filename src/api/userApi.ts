@@ -271,6 +271,8 @@ export interface UpdatePassengerRequest {
   birthdate: string
   address: AddressCommand
   adminCode: string
+  email?: string
+  newPassword?: string
   departmentIds?: string[]
   // BKD-14: valor de profile.updatedAt lido antes da edição — o backend usa
   // isto pra detectar se outro admin editou o registro nesse meio-tempo.
@@ -286,6 +288,8 @@ export interface UpdateDriverRequest {
   birthdate: string
   address: AddressCommand
   adminCode: string
+  email?: string
+  newPassword?: string
   phone?: string | null
   // BKD-14: ver comentário equivalente em UpdatePassengerRequest.
   updatedAt?: string

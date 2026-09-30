@@ -13,6 +13,8 @@ import {
   validateMaxLength,
   validateRequired,
   validateSafeText,
+  validateEmail,
+  validatePassword,
 } from '../utils/validators'
 import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
 
@@ -26,6 +28,8 @@ interface FormValues {
   city: string
   state: string
   department: string
+  email: string
+  newPassword: string
 }
 
 type FieldErrors = Partial<FormValues>
@@ -41,6 +45,8 @@ function toFormValues(p: PassengerProfile): FormValues {
     city: p.address?.city ?? p.city ?? '',
     state: p.address?.state ?? p.state ?? '',
     department: p.departments[0]?.departmentId ?? '',
+    email: p.email,
+    newPassword: '',
   }
 }
 
@@ -54,6 +60,8 @@ function validateForm(form: FormValues): FieldErrors {
   e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
   e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
   e.state = validateUf(form.state)
+  e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
+  if (form.newPassword) e.newPassword = validatePassword(form.newPassword)
   return e
 }
 
@@ -147,6 +155,8 @@ export default function PassengerEditPage() {
     city: 'Cidade',
     state: 'Estado',
     department: 'Departamento',
+    email: 'E-mail',
+    newPassword: 'Nova senha temporária',
   }
   const missingFields = (Object.keys(errors) as (keyof FormValues)[])
     .filter(k => !!errors[k])
@@ -180,6 +190,8 @@ export default function PassengerEditPage() {
         countryCode: 'BR',
       },
       adminCode,
+      email: form.email,
+      newPassword: form.newPassword || undefined,
       departmentIds: form.department ? [form.department] : [],
       // BKD-14: ver comentário equivalente em DriverEditPage.
       updatedAt: passenger.updatedAt,
@@ -248,6 +260,13 @@ export default function PassengerEditPage() {
             <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
             <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
+            <div className="col-span-2">
+              <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="nome@exemplo.com" softMaxLength={100} />
+            </div>
+            <div className="col-span-2">
+              <FormField id="newPassword" label="Nova senha temporária" type="password" value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Deixe em branco para não alterar" />
+              <p className="mt-1 text-xs text-gray-500">Quando informada, a senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p>
+            </div>
           </div>
         </div>
 
