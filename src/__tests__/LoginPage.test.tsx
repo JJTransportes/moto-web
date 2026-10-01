@@ -3,13 +3,21 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthContext'
+import { BrandImageProvider } from '../auth/BrandImageContext'
 import LoginPage from '../pages/LoginPage'
+
+vi.mock('../auth/BrandImageContext', () => ({
+  BrandImageProvider: ({ children }: { children: React.ReactNode }) => children,
+  useBrandImage: () => ({ brandImageUrl: null, isLoading: false, error: false, refetch: vi.fn() }),
+}))
 
 function renderLoginPage(initialPath = '/login') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <AuthProvider>
-        <LoginPage />
+        <BrandImageProvider>
+          <LoginPage />
+        </BrandImageProvider>
       </AuthProvider>
     </MemoryRouter>,
   )
@@ -96,7 +104,7 @@ describe('LoginPage', () => {
         expect.stringContaining('/api/auth/sign-in'),
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ email: 'user@example.com', password: 'secret123' }),
+          body: JSON.stringify({ email: 'user@example.com', password: 'secret123', expectedRole: 'GlobalAdmin' }),
         }),
       )
     })
@@ -140,7 +148,7 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: /entrar/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/e-mail ou senha inválidos/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/e-mail ou senha inválidos/i)).not.toHaveLength(0)
     })
   })
 
@@ -159,7 +167,7 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: /entrar/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/muitas tentativas/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/muitas tentativas/i)).not.toHaveLength(0)
     })
   })
 

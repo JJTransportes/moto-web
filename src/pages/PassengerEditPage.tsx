@@ -1,8 +1,10 @@
+import { Pencil, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import FormField from '../components/FormField'
 import ConfirmationModal from '../components/ConfirmationModal'
+import PasswordRequirements from '../components/PasswordRequirements'
 import { fetchPassengerProfile, updatePassenger, type PassengerProfile } from '../api/userApi'
 import { fetchPartitionDepartments, type DepartmentOption } from '../api/publicPartitionApi'
 import {
@@ -13,6 +15,10 @@ import {
   validateMaxLength,
   validateRequired,
   validateSafeText,
+  validateEmail,
+  validatePassword,
+  validateConfirmEmail,
+  validateConfirmPassword,
 } from '../utils/validators'
 import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
 
@@ -26,6 +32,10 @@ interface FormValues {
   city: string
   state: string
   department: string
+  email: string
+  confirmEmail: string
+  newPassword: string
+  confirmPassword: string
 }
 
 type FieldErrors = Partial<FormValues>
@@ -41,6 +51,10 @@ function toFormValues(p: PassengerProfile): FormValues {
     city: p.address?.city ?? p.city ?? '',
     state: p.address?.state ?? p.state ?? '',
     department: p.departments[0]?.departmentId ?? '',
+    email: p.email,
+    confirmEmail: p.email,
+    newPassword: '',
+    confirmPassword: '',
   }
 }
 
@@ -54,6 +68,12 @@ function validateForm(form: FormValues): FieldErrors {
   e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
   e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
   e.state = validateUf(form.state)
+  e.email = validateEmail(form.email) ?? validateMaxLength(form.email, 100, 'E-mail')
+  e.confirmEmail = validateConfirmEmail(form.email, form.confirmEmail)
+  if (form.newPassword || form.confirmPassword) {
+    e.newPassword = validatePassword(form.newPassword)
+    e.confirmPassword = validateConfirmPassword(form.newPassword, form.confirmPassword)
+  }
   return e
 }
 
@@ -64,6 +84,7 @@ export default function PassengerEditPage() {
 
   const [passenger, setPassenger] = useState<PassengerProfile | null>(null)
   const [form, setForm] = useState<FormValues | null>(null)
+  const [initialForm, setInitialForm] = useState<FormValues | null>(null)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [loadError, setLoadError] = useState(false)
   const [hadMissingFieldsAtLoad, setHadMissingFieldsAtLoad] = useState(false)
@@ -71,6 +92,8 @@ export default function PassengerEditPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [editingPassword, setEditingPassword] = useState(false)
 
   const [departments, setDepartments] = useState<DepartmentOption[]>([])
   const [departmentsLoading, setDepartmentsLoading] = useState(false)
@@ -83,6 +106,7 @@ export default function PassengerEditPage() {
       setPassenger(result.data)
       const values = toFormValues(result.data)
       setForm(values)
+      setInitialForm(values)
       const missing = Object.values(validateForm(values)).some(v => !!v)
       setHadMissingFieldsAtLoad(missing)
     })
@@ -136,6 +160,29 @@ export default function PassengerEditPage() {
     setForm(f => f ? { ...f, [field]: value } : f)
 
   const isFormValid = Object.values(errors).every(v => !v)
+  const hasPersistedChanges = initialForm !== null && (
+    form.fullName !== initialForm.fullName ||
+    form.cpf !== initialForm.cpf ||
+    form.rg !== initialForm.rg ||
+    form.registration !== initialForm.registration ||
+    form.birthdate !== initialForm.birthdate ||
+    form.address !== initialForm.address ||
+    form.city !== initialForm.city ||
+    form.state !== initialForm.state ||
+    form.department !== initialForm.department ||
+    form.email !== initialForm.email ||
+    form.newPassword !== ''
+  )
+
+  function cancelEmailEdit() {
+    setForm(f => f ? { ...f, email: passenger?.email ?? f.email, confirmEmail: passenger?.email ?? f.confirmEmail } : f)
+    setEditingEmail(false)
+  }
+
+  function cancelPasswordEdit() {
+    setForm(f => f ? { ...f, newPassword: '', confirmPassword: '' } : f)
+    setEditingPassword(false)
+  }
 
   const missingFieldLabels: Record<keyof FormValues, string> = {
     fullName: 'Nome completo',
@@ -147,6 +194,10 @@ export default function PassengerEditPage() {
     city: 'Cidade',
     state: 'Estado',
     department: 'Departamento',
+    email: 'E-mail',
+    confirmEmail: 'Confirmar e-mail',
+    newPassword: 'Nova senha temporária',
+    confirmPassword: 'Confirmar senha',
   }
   const missingFields = (Object.keys(errors) as (keyof FormValues)[])
     .filter(k => !!errors[k])
@@ -156,7 +207,7 @@ export default function PassengerEditPage() {
     e.preventDefault()
     const e2 = form ? validateForm(form) : {}
     setErrors(e2)
-    if (Object.values(e2).every(v => !v)) {
+    if (Object.values(e2).every(v => !v) && hasPersistedChanges) {
       setModalError(undefined)
       setIsModalOpen(true)
     }
@@ -180,6 +231,8 @@ export default function PassengerEditPage() {
         countryCode: 'BR',
       },
       adminCode,
+      email: form.email,
+      newPassword: form.newPassword || undefined,
       departmentIds: form.department ? [form.department] : [],
       // BKD-14: ver comentário equivalente em DriverEditPage.
       updatedAt: passenger.updatedAt,
@@ -248,6 +301,21 @@ export default function PassengerEditPage() {
             <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
             <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
+            <div className="col-span-2">
+              <div className="relative">
+                <FormField id="email" label="E-mail" required type="email" value={form.email} onChange={set('email')} error={errors.email} placeholder="nome@exemplo.com" softMaxLength={100} disabled={!editingEmail} />
+                {!editingEmail && <button type="button" aria-label="Editar e-mail" onClick={() => setEditingEmail(true)} className="absolute bottom-2.5 right-3 rounded p-1.5 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>}
+              </div>
+            </div>
+            {editingEmail && <div className="col-span-2"><FormField id="confirmEmail" label="Confirmar e-mail" required type="email" value={form.confirmEmail} onChange={set('confirmEmail')} error={errors.confirmEmail} placeholder="Confirme o e-mail" softMaxLength={100} /><button type="button" onClick={cancelEmailEdit} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-red-950 bg-gradient-to-b from-red-700 to-rose-950 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:from-red-800 hover:to-rose-950 focus:outline-none focus:ring-2 focus:ring-red-400"><X size={14} strokeWidth={2.5} /> Cancelar edição do e-mail</button></div>}
+            <div className="col-span-2">
+              <div className="relative">
+                <FormField id="newPassword" label="Nova senha temporária" type={editingPassword ? 'password' : 'text'} value={form.newPassword} onChange={set('newPassword')} error={errors.newPassword} placeholder="Senha não alterada" softMaxLength={72} disabled={!editingPassword} />
+                {!editingPassword && <button type="button" aria-label="Editar senha" onClick={() => setEditingPassword(true)} className="absolute bottom-2.5 right-3 rounded p-1.5 text-blue-600 hover:bg-blue-50"><Pencil size={16} /></button>}
+              </div>
+              {editingPassword && <><div className="mt-3 mb-3"><PasswordRequirements password={form.newPassword} /></div><p className="mt-1 text-xs text-gray-500">A senha será enviada ao e-mail acima. Ela não expira; oriente o usuário a trocá-la assim que possível.</p></>}
+            </div>
+            {editingPassword && <div className="col-span-2"><FormField id="confirmPassword" label="Confirmar senha" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} error={errors.confirmPassword} placeholder="Confirme a senha" softMaxLength={72} /><button type="button" onClick={cancelPasswordEdit} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-red-950 bg-gradient-to-b from-red-700 to-rose-950 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:from-red-800 hover:to-rose-950 focus:outline-none focus:ring-2 focus:ring-red-400"><X size={14} strokeWidth={2.5} /> Cancelar edição da senha</button></div>}
           </div>
         </div>
 
@@ -271,7 +339,7 @@ export default function PassengerEditPage() {
           </Link>
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || !hasPersistedChanges}
             className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Salvar Alterações

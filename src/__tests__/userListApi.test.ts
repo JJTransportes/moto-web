@@ -10,6 +10,7 @@ function mockFetch(responseData: unknown, status = 200) {
       ok: status >= 200 && status < 300,
       status,
       json: async () => responseData,
+      text: async () => JSON.stringify(responseData),
     } as Response
   }) as typeof globalThis.fetch
 }
@@ -27,6 +28,7 @@ describe('userListApi — listDrivers', () => {
         ok: true,
         status: 200,
         json: async () => ({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
+        text: async () => JSON.stringify({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
       } as Response
     }) as typeof globalThis.fetch
 
@@ -46,6 +48,7 @@ describe('userListApi — listDrivers', () => {
         ok: true,
         status: 200,
         json: async () => ({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
+        text: async () => JSON.stringify({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
       } as Response
     }) as typeof globalThis.fetch
 
@@ -91,6 +94,7 @@ describe('userListApi — listPassengers', () => {
         ok: true,
         status: 200,
         json: async () => ({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
+        text: async () => JSON.stringify({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
       } as Response
     }) as typeof globalThis.fetch
 
@@ -109,6 +113,7 @@ describe('userListApi — listPassengers', () => {
         ok: true,
         status: 200,
         json: async () => ({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
+        text: async () => JSON.stringify({ items: [], page: 1, pageSize: 20, totalCount: 0 }),
       } as Response
     }) as typeof globalThis.fetch
 

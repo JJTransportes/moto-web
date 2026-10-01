@@ -89,8 +89,7 @@ describe('Sidebar — GlobalAdmin role', () => {
 
   it('shows partitions section', () => {
     renderSidebar(['GlobalAdmin'])
-    expect(screen.getByText('Unidades')).toBeInTheDocument()
-    expect(screen.getByText('Unidades Públicas')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Secretarias' })).toBeInTheDocument()
   })
 })
 
