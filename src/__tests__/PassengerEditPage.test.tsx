@@ -123,6 +123,8 @@ describe('PassengerEditPage', () => {
     renderPage()
     await waitFor(() => screen.getByDisplayValue('Maria Passageira'))
 
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Maria Passageira Silva' } })
+
     fireEvent.click(screen.getByText('Salvar Alterações'))
     const dialog = await screen.findByRole('dialog')
     fireEvent.change(within(dialog).getByLabelText('Código do administrador'), { target: { value: 'admin-pass' } })
@@ -130,7 +132,7 @@ describe('PassengerEditPage', () => {
 
     await waitFor(() => {
       expect(mockedUpdatePassenger).toHaveBeenCalledWith('valid-token', 'passenger-1', expect.objectContaining({
-        fullName: 'Maria Passageira',
+        fullName: 'Maria Passageira Silva',
         address: expect.objectContaining({ city: 'Jacareí', state: 'SP' }),
         adminCode: 'admin-pass',
       }))
@@ -145,6 +147,8 @@ describe('PassengerEditPage', () => {
 
     renderPage()
     await waitFor(() => screen.getByDisplayValue('Maria Passageira'))
+
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'Maria Passageira Silva' } })
 
     fireEvent.click(screen.getByText('Salvar Alterações'))
     const dialog = await screen.findByRole('dialog')

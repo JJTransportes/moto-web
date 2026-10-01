@@ -121,7 +121,7 @@ describe('DriverEditPage', () => {
     renderPage()
 
     await waitFor(() => screen.getByDisplayValue('João Motorista'))
-    expect(screen.getByText('Salvar Alterações')).not.toBeDisabled()
+    expect(screen.getByText('Salvar Alterações')).toBeDisabled()
 
     fireEvent.change(screen.getByLabelText('Veículo disponível'), { target: { value: 'v-1' } })
 
@@ -158,7 +158,7 @@ describe('DriverEditPage', () => {
 
     await waitFor(() => expect(mockedChangeVehicle).toHaveBeenCalledWith('valid-token', 'driver-1', 'v-1'))
     await waitFor(() => expect(screen.getByText(/Veículo vinculado/)).toBeInTheDocument())
-    expect(screen.getByText('Salvar Alterações')).not.toBeDisabled()
+    expect(screen.getByText('Salvar Alterações')).toBeDisabled()
   })
 
   it('WEB-05: shows "Desvincular" for a driver that already has a vehicle, and confirms before calling the API', async () => {
@@ -221,6 +221,8 @@ describe('DriverEditPage', () => {
     renderPage()
     await waitFor(() => screen.getByDisplayValue('João Motorista'))
 
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'João Motorista Silva' } })
+
     fireEvent.click(screen.getByText('Salvar Alterações'))
     const dialog = await screen.findByRole('dialog')
     fireEvent.change(within(dialog).getByLabelText('Código do administrador'), { target: { value: 'admin-pass' } })
@@ -228,7 +230,7 @@ describe('DriverEditPage', () => {
 
     await waitFor(() => {
       expect(mockedUpdateDriver).toHaveBeenCalledWith('valid-token', 'driver-1', expect.objectContaining({
-        fullName: 'João Motorista',
+        fullName: 'João Motorista Silva',
         address: expect.objectContaining({ city: 'Jacareí', state: 'SP' }),
         adminCode: 'admin-pass',
       }))
@@ -243,6 +245,8 @@ describe('DriverEditPage', () => {
 
     renderPage()
     await waitFor(() => screen.getByDisplayValue('João Motorista'))
+
+    fireEvent.change(screen.getByLabelText('Nome completo'), { target: { value: 'João Motorista Silva' } })
 
     fireEvent.click(screen.getByText('Salvar Alterações'))
     const dialog = await screen.findByRole('dialog')
