@@ -3,10 +3,10 @@ import {
   APIProvider,
   Map,
   AdvancedMarker,
-  Pin,
   InfoWindow,
   useMap,
 } from '@vis.gl/react-google-maps'
+import { CarFront, UserRound } from 'lucide-react'
 import type { FilterType, OnlineUserDto, TodayTravelDto } from '../../types/map'
 import MapInfoWindowContent from './MapInfoWindowContent'
 import CobaltGoogleRoute from './CobaltGoogleRoute'
@@ -130,18 +130,22 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
           {visibleUsers.map((user) => {
             const isStale =
               new Date().getTime() - new Date(user.lastUpdated).getTime() > 5 * 60 * 1000
-            const pinColor = user.role === 'Driver' ? '#1F4FE0' : '#95C11F'
+            const markerColor = user.role === 'Driver' ? '#1F4FE0' : '#95C11F'
             return (
               <AdvancedMarker
                 key={`user-${user.userId}`}
                 position={{ lat: user.latitude, lng: user.longitude }}
                 onClick={() => handleUserClick(user)}
               >
-                <Pin
-                  background={isStale ? '#A2ADC4' : pinColor}
-                  glyphColor="#fff"
-                  borderColor={isStale ? '#5A6784' : pinColor}
-                />
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-white shadow-lg transition-transform hover:scale-110"
+                  style={{ backgroundColor: isStale ? '#A2ADC4' : markerColor }}
+                  title={`${user.role === 'Driver' ? 'Motorista' : 'Passageiro'}: ${user.fullName}`}
+                >
+                  {user.role === 'Driver'
+                    ? <CarFront aria-hidden="true" size={23} strokeWidth={2.5} />
+                    : <UserRound aria-hidden="true" size={22} strokeWidth={2.5} />}
+                </div>
               </AdvancedMarker>
             )
           })}
