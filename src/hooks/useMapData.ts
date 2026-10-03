@@ -97,9 +97,12 @@ export function useMapData(): UseMapDataResult {
       // REST polling keeps the map available if the live connection fails.
     })
 
+    // Travel lifecycle changes (Accepted/InProgress/Completed/Cancelled) must
+    // enter or leave the operational map quickly even if a SignalR event was
+    // missed. GPS movement itself still arrives immediately through SignalR.
     const refreshTimer = window.setInterval(() => {
       void load(false)
-    }, 30_000)
+    }, 5_000)
 
     return () => {
       cancelledRef.current = true

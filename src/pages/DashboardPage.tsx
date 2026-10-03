@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useMapData } from '../hooks/useMapData'
 import StatsCards from '../components/dashboard/StatsCards'
@@ -76,7 +77,22 @@ export default function DashboardPage() {
       ) : (
         // ─── Map View ──────────────────────────────────────
         <div className="space-y-4">
-          <MapFilterTags active={mapFilter} onChange={setMapFilter} />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <MapFilterTags active={mapFilter} onChange={setMapFilter} />
+            <button
+              type="button"
+              onClick={mapRetry}
+              disabled={mapLoading}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Atualizar mapa"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${mapLoading ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              {mapLoading ? 'Atualizando...' : 'Atualizar mapa'}
+            </button>
+          </div>
 
           {mapLoading ? (
             <MapSkeleton />
