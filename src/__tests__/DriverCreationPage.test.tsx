@@ -51,6 +51,7 @@ function fillValidForm() {
   fireEvent.change(screen.getByLabelText('CPF'), { target: { value: '52998224725' } })
   fireEvent.change(screen.getByLabelText('RG'), { target: { value: 'SP9876543' } })
   fireEvent.change(screen.getByLabelText('Matrícula'), { target: { value: 'MOT-001' } })
+  fireEvent.change(screen.getByLabelText('Telefone'), { target: { value: '11988887777' } })
   fireEvent.change(screen.getByLabelText('CNH'), { target: { value: '12345678900' } })
   fireEvent.change(screen.getByLabelText('Data de nascimento'), { target: { value: '1985-03-15' } })
   fireEvent.change(screen.getByLabelText('Endereço'), { target: { value: 'Av. Brasil, 456' } })

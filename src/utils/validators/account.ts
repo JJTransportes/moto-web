@@ -4,6 +4,15 @@ export function validateEmail(email: string): string | undefined {
   return undefined
 }
 
+export function validatePhone(value: string): string | undefined {
+  const digits = value.replace(/\D/g, '')
+  if (!digits) return 'Telefone é obrigatório.'
+  if (digits.length < 10 || digits.length > 11) {
+    return 'Telefone inválido. Informe DDD e número.'
+  }
+  return undefined
+}
+
 export interface PasswordRequirement {
   key: string
   label: string

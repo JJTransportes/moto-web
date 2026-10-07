@@ -284,7 +284,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
   } | null>(null)
 
   const showUsers = activeFilter === 'all' || activeFilter === 'drivers' || activeFilter === 'passengers'
-  const showTravels = activeFilter === 'travels'
+  const showTravels = activeFilter === 'all' || activeFilter === 'travels'
   const activeFocusId = lockedTravelId ?? focusedTravelId
   const activeTravels = travels.filter(
     (travel) => travel.status === 'Accepted' || travel.status === 'InProgress',

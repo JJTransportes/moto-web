@@ -200,6 +200,7 @@ export interface CreatePassengerRequest {
   cpf: string
   rg: string
   registration: string
+  phone: string
   birthdate: string
   address: AddressCommand
   departmentIds: string[]
@@ -214,6 +215,7 @@ export interface CreateDriverRequest {
   cpf: string
   rg: string
   registration: string
+  phone: string
   cnh: string
   birthdate: string
   address: AddressCommand
