@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { fetchTravelById, cancelTravel } from '../api/travelApi'
-import type { TravelDetailResponse } from '../types/travel'
+import type { TravelDetailResponse, TravelStatus } from '../types/travel'
 import TravelStatusBadge from '../components/travel/TravelStatusBadge'
 import TravelMap from '../components/travel/TravelMap'
 import CancelTravelModal from '../components/travel/CancelTravelModal'
@@ -190,7 +190,23 @@ export default function TravelDetailPage() {
         <InfoCard label="Iniciada em" value={formatDate(travel.startedAt)} />
         <InfoCard label="Finalizada em" value={formatDate(travel.finishedAt)} />
         <InfoCard label="Cancelada em" value={formatDate(travel.cancelledAt)} />
-        <InfoCard label="Motivo do cancelamento" value={travel.cancellationReason ?? '—'} />
+        <InfoCard label="Informações do cancelamento">
+          {travel.status === 'Cancelled' ? (
+            <div className="space-y-2 text-sm text-gray-800">
+              <p>
+                {cancellationStatusLabel(travel.cancellationFromStatus)} foi cancelada
+                {' '}pelo {cancellationActorLabel(travel.cancelledByRole)}:{' '}
+                <strong>{travel.cancelledByName ?? 'Nome não identificado'}</strong>.
+              </p>
+              <p>
+                <span className="font-semibold">Motivo:</span>{' '}
+                {travel.cancellationReason ?? 'Não informado'}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm font-medium text-gray-800">—</p>
+          )}
+        </InfoCard>
       </div>
 
       {/* Routes */}
@@ -286,4 +302,22 @@ function InfoCard({ label, value, children }: { label: string; value?: string; c
       )}
     </div>
   )
+}
+
+function cancellationStatusLabel(status?: TravelStatus | null) {
+  switch (status) {
+    case 'Accepted': return 'A viagem aceita pelo motorista'
+    case 'InProgress': return 'A viagem em andamento'
+    case 'Pending': return 'A solicitação de viagem'
+    default: return 'A viagem'
+  }
+}
+
+function cancellationActorLabel(role?: TravelDetailResponse['cancelledByRole']) {
+  switch (role) {
+    case 'Driver': return 'motorista'
+    case 'Passenger': return 'passageiro'
+    case 'Administrator': return 'administrador'
+    default: return 'usuário'
+  }
 }

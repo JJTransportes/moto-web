@@ -26,8 +26,9 @@ import {
   validatePassword,
   validateConfirmEmail,
   validateConfirmPassword,
+  validatePhone,
 } from '../utils/validators'
-import { maskCpf, maskRg, maskCnh, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
+import { maskCpf, maskRg, maskCnh, maskPhone, maskUf, unmaskCpf, unmaskRg, unmaskPhone, validateUf } from '../utils/masks'
 
 interface FormValues {
   fullName: string
@@ -35,6 +36,7 @@ interface FormValues {
   rg: string
   registration: string
   cnh: string
+  phone: string
   birthdate: string
   address: string
   city: string
@@ -54,6 +56,7 @@ function toFormValues(d: DriverProfile): FormValues {
     rg: maskRg(d.rg ?? ''),
     registration: d.registration ?? '',
     cnh: d.cnh ?? '',
+    phone: maskPhone(d.phone ?? ''),
     birthdate: (d.birthdate ?? '').slice(0, 10),
     address: d.address?.lineOne ?? '',
     city: d.address?.city ?? d.city ?? '',
@@ -72,6 +75,7 @@ function validateForm(form: FormValues): FieldErrors {
   e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
   e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
   e.cnh = validateRequired(form.cnh, 'CNH') ?? validateCnh(form.cnh)
+  e.phone = validatePhone(form.phone)
   e.birthdate = validateBirthdate(form.birthdate)
   e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
   e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
@@ -185,6 +189,7 @@ export default function DriverEditPage() {
     form.rg !== initialForm.rg ||
     form.registration !== initialForm.registration ||
     form.cnh !== initialForm.cnh ||
+    form.phone !== initialForm.phone ||
     form.birthdate !== initialForm.birthdate ||
     form.address !== initialForm.address ||
     form.city !== initialForm.city ||
@@ -225,6 +230,7 @@ export default function DriverEditPage() {
       rg: unmaskRg(form.rg),
       registration: form.registration,
       cnh: form.cnh,
+      phone: unmaskPhone(form.phone),
       birthdate: form.birthdate,
       address: {
         lineOne: form.address,
@@ -286,6 +292,7 @@ export default function DriverEditPage() {
     rg: 'RG',
     registration: 'Matrícula',
     cnh: 'CNH',
+    phone: 'Telefone',
     birthdate: 'Data de nascimento',
     address: 'Endereço',
     city: 'Cidade',
@@ -333,6 +340,7 @@ export default function DriverEditPage() {
             <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
             <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
             <FormField id="cnh" label="CNH" required value={form.cnh} onChange={set('cnh')} error={errors.cnh} placeholder="CNH" maxLength={11} mask={maskCnh} digitsOnly />
+            <FormField id="phone" label="Telefone" required value={form.phone} onChange={set('phone')} error={errors.phone} placeholder="(12) 91234-5678" maxLength={15} mask={maskPhone} />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
             <div className="col-span-2">
               <div className="relative">

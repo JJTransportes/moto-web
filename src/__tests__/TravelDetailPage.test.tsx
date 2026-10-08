@@ -100,6 +100,28 @@ describe('TravelDetailPage', () => {
     })
   })
 
+  it('identifies who cancelled the travel and displays the reason', async () => {
+    mockFetchById.mockResolvedValue({
+      ok: true,
+      data: makeDetail({
+        status: 'Cancelled',
+        cancellationReason: 'Passageiro teve uma emergência',
+        cancelledByUserId: 'p-1',
+        cancelledByName: 'João Silva',
+        cancelledByRole: 'Passenger',
+        cancellationFromStatus: 'Accepted',
+      }),
+    })
+    renderPage()
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/A viagem aceita pelo motorista foi cancelada pelo passageiro/),
+      ).toBeInTheDocument()
+    })
+    expect(screen.getByText(/Passageiro teve uma emergência/)).toBeInTheDocument()
+  })
+
   it('renders map container', async () => {
     mockFetchById.mockResolvedValue({ ok: true, data: makeDetail() })
     renderPage()
@@ -107,9 +129,7 @@ describe('TravelDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Mapa')).toBeInTheDocument()
     })
-    // Leaflet map container should exist
-    const mapContainer = document.querySelector('.leaflet-container')
-    expect(mapContainer).toBeInTheDocument()
+    expect(screen.getByTestId('travel-google-map')).toBeInTheDocument()
   })
 
   it('shows Cancel Travel button for non-terminal status', async () => {

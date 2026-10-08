@@ -311,6 +311,15 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
 
   const visibleTravels = showTravels ? activeTravels : []
 
+  // A seleção pertence ao filtro atual. Ao trocar entre Todos, Motoristas,
+  // Passageiros e Viagens, fecha a janela anterior para não exibir detalhes
+  // de um marcador que já não pertence à visualização ativa.
+  useEffect(() => {
+    setSelectedMarker(null)
+    setLockedTravelId(null)
+    setFocusedTravelId(null)
+  }, [activeFilter])
+
   useEffect(() => {
     if (selectedMarker?.type !== 'travel') return
     const selectedTravel = selectedMarker.data as TodayTravelDto
@@ -373,12 +382,27 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
 
   return (
     <APIProvider apiKey={apiKey}>
-      <div className="h-[600px] w-full overflow-hidden rounded-[26px] border border-[var(--border-default)] shadow-moto">
+      <div
+        className="h-[calc(100vh-220px)] min-h-[650px] w-full overflow-hidden rounded-[26px] border border-[var(--border-default)] shadow-moto"
+        data-testid="dashboard-map-container"
+      >
         <Map
           defaultCenter={JACAREI_CENTER}
           defaultZoom={DEFAULT_ZOOM}
+          minZoom={5}
+          maxZoom={20}
+          restriction={{
+            latLngBounds: {
+              north: 6,
+              south: -34,
+              west: -74,
+              east: -34,
+            },
+            strictBounds: true,
+          }}
           mapId="moto-dashboard-map"
           gestureHandling="greedy"
+          scrollwheel
           disableDefaultUI
           style={{ width: '100%', height: '100%' }}
         >

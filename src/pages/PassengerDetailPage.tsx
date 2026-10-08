@@ -8,6 +8,7 @@ import {
   Mail,
   MapPin,
   Pencil,
+  Phone,
   Power,
   ShieldCheck,
   ShieldX,
@@ -31,7 +32,7 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import SuccessModal from '../components/SuccessModal'
 import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
-import { maskCpf, maskRg } from '../utils/masks'
+import { maskCpf, maskPhone, maskRg } from '../utils/masks'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -328,6 +329,13 @@ export default function PassengerDetailPage() {
           label="E-mail"
           value={passenger.email}
         />
+        {passenger.phone && (
+          <InfoCard
+            icon={<Phone className="h-4 w-4 text-blue-500" />}
+            label="Telefone"
+            value={maskPhone(passenger.phone)}
+          />
+        )}
         <InfoCard
           icon={<Hash className="h-4 w-4 text-blue-500" />}
           label="CPF"

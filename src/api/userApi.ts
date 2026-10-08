@@ -74,6 +74,7 @@ export interface PassengerProfile {
   userId: string
   fullName: string
   email: string
+  phone?: string | null
   cpf: string
   rg: string
   registration: string
@@ -225,7 +226,7 @@ export interface CreateDriverRequest {
   vehicleId: string
 }
 
-const DUPLICATE_FIELDS = ['email', 'cpf', 'cnh', 'rg', 'registration'] as const
+const DUPLICATE_FIELDS = ['email', 'cpf', 'cnh', 'rg', 'registration', 'phone'] as const
 export type DuplicateField = (typeof DUPLICATE_FIELDS)[number]
 
 export type UserCreationResult =
@@ -254,7 +255,9 @@ async function createUser<TBody>(
     message: result.status === 401
       ? 'Código do administrador inválido.'
       : result.status === 409
-        ? (result.apiMessage ?? 'Dados duplicados. Verifique CPF, e-mail, CNH, RG ou matrícula.')
+        ? (result.apiMessage ?? (field === 'phone'
+          ? 'Este telefone já está cadastrado.'
+          : 'Dados duplicados. Verifique CPF, e-mail, CNH, RG ou matrícula.'))
         : 'Erro ao criar usuário. Tente novamente.',
   }
 }
@@ -273,6 +276,7 @@ export interface UpdatePassengerRequest {
   birthdate: string
   address: AddressCommand
   adminCode: string
+  phone: string
   email?: string
   newPassword?: string
   departmentIds?: string[]
@@ -324,7 +328,9 @@ export async function updatePassenger(
       // concorrência) com mensagens diferentes — usa a mensagem real do
       // backend (apiMessage) em vez de assumir sempre "CPF duplicado".
       : result.status === 409
-        ? (result.apiMessage ?? 'CPF já cadastrado para outro usuário.')
+        ? (result.apiMessage ?? (result.apiField === 'phone'
+          ? 'Este telefone já está cadastrado.'
+          : 'CPF já cadastrado para outro usuário.'))
         : result.status === 404
           ? 'Passageiro não encontrado.'
           : 'Erro ao atualizar passageiro. Verifique os dados e tente novamente.',
@@ -348,7 +354,9 @@ export async function updateDriver(
       ? 'Código do administrador inválido.'
       // BKD-14: ver comentário equivalente em updatePassenger.
       : result.status === 409
-        ? (result.apiMessage ?? 'CPF ou CNH já cadastrados para outro usuário.')
+        ? (result.apiMessage ?? (result.apiField === 'phone'
+          ? 'Este telefone já está cadastrado.'
+          : 'CPF ou CNH já cadastrados para outro usuário.'))
         : result.status === 404
           ? 'Motorista não encontrado.'
           : 'Erro ao atualizar motorista. Verifique os dados e tente novamente.',

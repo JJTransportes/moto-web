@@ -1,14 +1,12 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
-import L from 'leaflet'
-import { useMemo } from 'react'
-
-// Fix Leaflet default icon issue with bundlers
-import iconUrl from 'leaflet/dist/images/marker-icon.png'
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
-
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl
-L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
+import { useEffect, useMemo, useState } from 'react'
+import {
+  AdvancedMarker,
+  APIProvider,
+  InfoWindow,
+  Map,
+  useMap,
+  useMapsLibrary,
+} from '@vis.gl/react-google-maps'
 
 interface TravelMapProps {
   originLat: number
@@ -21,20 +19,82 @@ interface TravelMapProps {
   route?: Array<[number, number]>
 }
 
-function createIcon(color: string): L.DivIcon {
-  return L.divIcon({
-    className: '',
-    html: `<div style="
-      background:${color};
-      width:24px;height:24px;
-      border-radius:50%;
-      border:3px solid white;
-      box-shadow:0 2px 6px rgba(0,0,0,0.3);
-    "></div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-    popupAnchor: [0, -12],
-  })
+type MapPoint = { lat: number; lng: number }
+
+function FitTravelBounds({ points }: { points: MapPoint[] }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (!map || points.length === 0) return
+    const bounds = new google.maps.LatLngBounds()
+    points.forEach((point) => bounds.extend(point))
+    map.fitBounds(bounds, 64)
+  }, [map, points])
+
+  return null
+}
+
+function TravelRoute({ path }: { path: MapPoint[] }) {
+  const map = useMap()
+  const maps = useMapsLibrary('maps')
+
+  useEffect(() => {
+    if (!map || !maps || path.length < 2) return
+
+    const halo = new maps.Polyline({
+      map,
+      path,
+      strokeColor: '#9dbbff',
+      strokeOpacity: 0.48,
+      strokeWeight: 12,
+      geodesic: true,
+      zIndex: 1,
+    })
+    const routeLine = new maps.Polyline({
+      map,
+      path,
+      strokeColor: '#1f4fe0',
+      strokeOpacity: 1,
+      strokeWeight: 5,
+      geodesic: true,
+      zIndex: 2,
+    })
+
+    return () => {
+      halo.setMap(null)
+      routeLine.setMap(null)
+    }
+  }, [map, maps, path])
+
+  return null
+}
+
+function PointMarker({
+  position,
+  label,
+  color,
+}: {
+  position: MapPoint
+  label: string
+  color: string
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <AdvancedMarker position={position} title={label} onClick={() => setOpen(true)}>
+        <div
+          className="h-6 w-6 rounded-full border-[3px] border-white shadow-md"
+          style={{ backgroundColor: color }}
+        />
+      </AdvancedMarker>
+      {open && (
+        <InfoWindow position={position} onCloseClick={() => setOpen(false)}>
+          <p className="max-w-64 text-sm text-slate-700">{label}</p>
+        </InfoWindow>
+      )}
+    </>
+  )
 }
 
 export default function TravelMap({
@@ -42,41 +102,56 @@ export default function TravelMap({
   destLat, destLng, destLabel,
   height = '400px', route,
 }: TravelMapProps) {
-  const bounds = useMemo(() => {
-    return L.latLngBounds(
-      [originLat, originLng],
-      [destLat, destLng],
-    )
-  }, [originLat, originLng, destLat, destLng])
-
-  const originIcon = useMemo(() => createIcon('#95c11f'), [])
-  const destIcon = useMemo(() => createIcon('#1f4fe0'), [])
+  const apiKey = import.meta.env.VITE_MAPS_API_KEY ?? ''
+  const origin = useMemo(() => ({ lat: originLat, lng: originLng }), [originLat, originLng])
+  const destination = useMemo(() => ({ lat: destLat, lng: destLng }), [destLat, destLng])
+  const routePath = useMemo(
+    () => route?.map(([lat, lng]) => ({ lat, lng })) ?? [],
+    [route],
+  )
+  const boundsPoints = useMemo(
+    () => routePath.length > 1 ? routePath : [origin, destination],
+    [destination, origin, routePath],
+  )
 
   return (
-    <div style={{ height }} className="w-full overflow-hidden rounded-[26px] border border-[var(--border-default)] shadow-moto">
-      <MapContainer
-        bounds={bounds}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={true}
-        scrollWheelZoom={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {route && route.length > 1 && (
-          <>
-            <Polyline positions={route} pathOptions={{ color: '#9dbbff', opacity: 0.48, weight: 12 }} />
-            <Polyline positions={route} pathOptions={{ color: '#1f4fe0', opacity: 1, weight: 5 }} />
-          </>
-        )}
-        <Marker position={[originLat, originLng]} icon={originIcon}>
-          <Popup>{originLabel}</Popup>
-        </Marker>
-        <Marker position={[destLat, destLng]} icon={destIcon}>
-          <Popup>{destLabel}</Popup>
-        </Marker>
-      </MapContainer>
+    <div
+      data-testid="travel-google-map"
+      style={{ height }}
+      className="w-full overflow-hidden rounded-[26px] border border-[var(--border-default)] shadow-moto"
+    >
+      {!apiKey || apiKey === 'your_google_maps_api_key_here' ? (
+        <div className="flex h-full items-center justify-center bg-slate-50 text-center">
+          <div>
+            <p className="font-medium text-slate-600">Google Maps API key não configurada</p>
+            <p className="mt-1 text-sm text-slate-400">Configure VITE_MAPS_API_KEY no arquivo .env</p>
+          </div>
+        </div>
+      ) : (
+        <APIProvider apiKey={apiKey}>
+          <Map
+            defaultCenter={origin}
+            defaultZoom={14}
+            minZoom={5}
+            maxZoom={20}
+            restriction={{
+              latLngBounds: { north: 6, south: -34, west: -74, east: -34 },
+              strictBounds: true,
+            }}
+            mapId="moto-travel-detail-map"
+            gestureHandling="greedy"
+            scrollwheel
+            disableDefaultUI
+            zoomControl
+            style={{ width: '100%', height: '100%' }}
+          >
+            <FitTravelBounds points={boundsPoints} />
+            <TravelRoute path={routePath} />
+            <PointMarker position={origin} label={originLabel} color="#95c11f" />
+            <PointMarker position={destination} label={destLabel} color="#1f4fe0" />
+          </Map>
+        </APIProvider>
+      )}
     </div>
   )
 }

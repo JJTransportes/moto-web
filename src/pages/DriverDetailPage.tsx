@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowLeft, Briefcase, Calendar, Car, Mail, MapPin, Pencil, Power, ShieldCheck, ShieldX, Trash2, User } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Briefcase, Calendar, Car, Mail, MapPin, Pencil, Phone, Power, ShieldCheck, ShieldX, Trash2, User } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -14,7 +14,7 @@ import ConfirmationModal from '../components/ConfirmationModal'
 import SuccessModal from '../components/SuccessModal'
 import Toast from '../components/Toast'
 import UserAvatar from '../components/UserAvatar'
-import { maskCpf, maskRg } from '../utils/masks'
+import { maskCpf, maskPhone, maskRg } from '../utils/masks'
 
 type PageStatus = 'loading' | 'loaded' | 'error' | 'notFound'
 
@@ -247,6 +247,13 @@ export default function DriverDetailPage() {
           label="E-mail"
           value={driver.email}
         />
+        {driver.phone && (
+          <InfoCard
+            icon={<Phone className="h-4 w-4 text-blue-500" />}
+            label="Telefone"
+            value={maskPhone(driver.phone)}
+          />
+        )}
         {driver.cpf && <InfoCard label="CPF" value={maskCpf(driver.cpf)} />}
         {driver.rg && <InfoCard label="RG" value={maskRg(driver.rg)} />}
         {driver.registration && <InfoCard label="Matrícula" value={driver.registration} />}
