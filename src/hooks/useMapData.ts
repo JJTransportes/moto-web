@@ -55,6 +55,10 @@ export function useMapData(): UseMapDataResult {
     const connection = new HubConnectionBuilder()
       .withUrl(`${baseUrl}/hubs/travel-management`, {
         accessTokenFactory: () => token ?? '',
+        // A autenticação vai no token, não em cookies. Com credenciais ligadas
+        // (padrão do cliente), o navegador exige Access-Control-Allow-Credentials
+        // e origem explícita no preflight do /negotiate, que a API não envia.
+        withCredentials: false,
       })
       .withAutomaticReconnect([0, 1_000, 2_000, 5_000, 10_000])
       .configureLogging(LogLevel.Warning)

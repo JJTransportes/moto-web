@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
 import { useBrandImage } from '../auth/BrandImageContext'
 import FormField from '../components/FormField'
@@ -26,18 +27,26 @@ export default function SettingsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState<string | undefined>()
+  const [categoryPage, setCategoryPage] = useState(1)
+  const categoryPageSize = 10
 
-  useEffect(() => {
+  const loadCategories = useCallback(() => {
     if (!token) return
+    setPageStatus('loading')
     listCategories(token).then(result => {
       if (result.ok) {
         setCategories(result.data)
+        setCategoryPage(1)
         setPageStatus('loaded')
       } else {
         setPageStatus('error')
       }
     })
   }, [token])
+
+  useEffect(() => {
+    loadCategories()
+  }, [loadCategories])
 
   const set = (field: keyof FormValues) => (value: string) =>
     setForm(f => ({ ...f, [field]: value }))
@@ -77,6 +86,13 @@ export default function SettingsPage() {
     }
   }
 
+  const categoryTotalPages = Math.max(1, Math.ceil(categories.length / categoryPageSize))
+  const currentCategoryPage = Math.min(categoryPage, categoryTotalPages)
+  const pagedCategories = categories.slice(
+    (currentCategoryPage - 1) * categoryPageSize,
+    currentCategoryPage * categoryPageSize,
+  )
+
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="mb-6 text-2xl font-bold text-gray-800">Configurações</h1>
@@ -85,7 +101,13 @@ export default function SettingsPage() {
 
       {/* Existing categories list */}
       <div className="mb-8 rounded-xl bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-base font-semibold text-gray-700">Categorias existentes</h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-gray-700">Categorias existentes</h2>
+          <button type="button" onClick={loadCategories} disabled={pageStatus === 'loading'} aria-label="Atualizar categorias" className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 disabled:opacity-50">
+            <RefreshCw className={`h-4 w-4 ${pageStatus === 'loading' ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
 
         {pageStatus === 'loading' && (
           <div className="flex items-center justify-center py-8">
@@ -105,7 +127,7 @@ export default function SettingsPage() {
 
         {pageStatus === 'loaded' && categories.length > 0 && (
           <ul className="divide-y divide-gray-100">
-            {categories.map(c => (
+            {pagedCategories.map(c => (
               <li key={c.categoryId} className="py-3">
                 <p className="font-medium text-gray-900">{c.title}</p>
                 {c.description && (
@@ -114,6 +136,15 @@ export default function SettingsPage() {
               </li>
             ))}
           </ul>
+        )}
+        {pageStatus === 'loaded' && categoryTotalPages > 1 && (
+          <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
+            <p className="text-sm text-gray-500">Página {currentCategoryPage} de {categoryTotalPages}</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setCategoryPage(value => Math.max(1, value - 1))} disabled={currentCategoryPage === 1} className="rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:opacity-50">Anterior</button>
+              <button type="button" onClick={() => setCategoryPage(value => Math.min(categoryTotalPages, value + 1))} disabled={currentCategoryPage === categoryTotalPages} className="rounded-lg border border-gray-300 px-3 py-2 text-sm disabled:opacity-50">Próximo</button>
+            </div>
+          </div>
         )}
       </div>
 

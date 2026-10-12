@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, X } from 'lucide-react'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { useMapData } from '../hooks/useMapData'
 import StatsCards from '../components/dashboard/StatsCards'
@@ -26,6 +26,8 @@ export default function DashboardPage() {
     useMapData()
 
   const [mapFilter, setMapFilter] = useState<FilterType>('all')
+  // Cada clique em "Desfocar" incrementa o contador; o mapa limpa o foco ao vê-lo mudar.
+  const [focusResetSignal, setFocusResetSignal] = useState(0)
 
   const handleViewChange = (view: 'stats' | 'map') => {
     if (view === 'map') {
@@ -39,7 +41,24 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <DashboardViewSelector activeView={activeView} onChange={handleViewChange} />
+        <div className="flex items-center gap-3">
+          {activeView === 'stats' && (
+            <button
+              type="button"
+              onClick={statsRetry}
+              disabled={statsLoading}
+              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Atualizar dados do dashboard"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${statsLoading ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              {statsLoading ? 'Atualizando...' : 'Atualizar dados'}
+            </button>
+          )}
+          <DashboardViewSelector activeView={activeView} onChange={handleViewChange} />
+        </div>
       </div>
 
       {activeView === 'stats' ? (
@@ -79,19 +98,30 @@ export default function DashboardPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <MapFilterTags active={mapFilter} onChange={setMapFilter} />
-            <button
-              type="button"
-              onClick={mapRetry}
-              disabled={mapLoading}
-              className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-              aria-label="Atualizar mapa"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${mapLoading ? 'animate-spin' : ''}`}
-                aria-hidden="true"
-              />
-              {mapLoading ? 'Atualizando...' : 'Atualizar mapa'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setFocusResetSignal((current) => current + 1)}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50"
+                aria-label="Desfocar viagem"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+                Desfocar
+              </button>
+              <button
+                type="button"
+                onClick={mapRetry}
+                disabled={mapLoading}
+                className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Atualizar mapa"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${mapLoading ? 'animate-spin' : ''}`}
+                  aria-hidden="true"
+                />
+                {mapLoading ? 'Atualizando...' : 'Atualizar mapa'}
+              </button>
+            </div>
           </div>
 
           {mapLoading ? (
@@ -103,6 +133,7 @@ export default function DashboardPage() {
               users={mapData?.onlineUsers ?? []}
               travels={mapData?.todayTravels ?? []}
               activeFilter={mapFilter}
+              focusResetSignal={focusResetSignal}
             />
           )}
         </div>

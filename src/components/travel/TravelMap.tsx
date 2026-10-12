@@ -142,7 +142,6 @@ export default function TravelMap({
             gestureHandling="greedy"
             scrollwheel
             disableDefaultUI
-            zoomControl
             style={{ width: '100%', height: '100%' }}
           >
             <FitTravelBounds points={boundsPoints} />

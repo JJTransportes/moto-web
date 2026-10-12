@@ -140,8 +140,7 @@ export default function MapInfoWindowContent({ type, data }: MapInfoWindowConten
   const statusLabel =
     travel.status === 'InProgress' ? 'Viagem em andamento' : 'A caminho do passageiro'
 
-  const statusColor =
-    travel.status === 'InProgress' ? 'text-[#166534]' : 'text-blue-700'
+  const statusColor = 'text-blue-700'
 
   return (
     <div className="min-w-[260px] p-1">

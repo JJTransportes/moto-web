@@ -32,6 +32,8 @@ function SortIcon({ active, direction }: { active: boolean; direction: 'asc' | '
 export default function PartitionsTravelsTable({ partitions }: PartitionsTravelsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('totalTravels')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [page, setPage] = useState(1)
+  const pageSize = 10
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -65,9 +67,14 @@ export default function PartitionsTravelsTable({ partitions }: PartitionsTravels
     return copy
   }, [partitions, sortKey, sortDir])
 
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const paged = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
   const headerClass = 'cursor-pointer p-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] hover:text-cobalto'
 
   return (
+    <div className="space-y-3">
     <div className="mo-surface overflow-x-auto">
       <table className="w-full">
         <thead>
@@ -110,7 +117,7 @@ export default function PartitionsTravelsTable({ partitions }: PartitionsTravels
               </td>
             </tr>
           ) : (
-            sorted.map((p) => (
+            paged.map((p) => (
               <tr key={p.publicPartitionId} className="transition-colors hover:bg-gray-50 even:bg-gray-50/50">
                 <td className="max-w-48 truncate p-3 text-sm font-medium text-gray-900">
                   {p.publicPartitionName}
@@ -123,6 +130,16 @@ export default function PartitionsTravelsTable({ partitions }: PartitionsTravels
           )}
         </tbody>
       </table>
+    </div>
+    {totalPages > 1 && (
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">Página {currentPage} de {totalPages} ({sorted.length} unidades)</p>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setPage(value => Math.max(1, value - 1))} disabled={currentPage === 1} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Anterior</button>
+          <button type="button" onClick={() => setPage(value => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Próximo</button>
+        </div>
+      </div>
+    )}
     </div>
   )
 }

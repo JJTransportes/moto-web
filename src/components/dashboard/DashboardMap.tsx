@@ -58,6 +58,8 @@ interface DashboardMapProps {
   users: OnlineUserDto[]
   travels: TodayTravelDto[]
   activeFilter: FilterType
+  /** Muda a cada clique em "Desfocar" no cabeçalho do mapa. */
+  focusResetSignal?: number
 }
 
 function FitBoundsOnData({ users, travels, activeFilter }: DashboardMapProps) {
@@ -242,10 +244,10 @@ function ActiveTravelCar({ travel, driver, dimmed, emphasized, onClick }: Active
       <div
         className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white text-white shadow-xl transition-all hover:scale-110"
         style={{
-          background: 'linear-gradient(145deg, #2F6B45, #123D27)',
+          background: 'linear-gradient(145deg, #2F6BFF, #133086)',
           boxShadow: emphasized
-            ? '0 0 0 7px rgba(22,101,52,.22), 0 10px 24px rgba(18,61,39,.38)'
-            : '0 7px 18px rgba(18,61,39,.32)',
+            ? '0 0 0 7px rgba(47,107,255,.22), 0 10px 24px rgba(19,48,134,.38)'
+            : '0 7px 18px rgba(19,48,134,.32)',
           opacity: dimmed ? .22 : 1,
           transform: emphasized ? 'scale(1.16)' : undefined,
         }}
@@ -274,7 +276,12 @@ function FinishFlag() {
   )
 }
 
-export default function DashboardMap({ users, travels, activeFilter }: DashboardMapProps) {
+export default function DashboardMap({
+  users,
+  travels,
+  activeFilter,
+  focusResetSignal = 0,
+}: DashboardMapProps) {
   const [focusedTravelId, setFocusedTravelId] = useState<string | null>(null)
   const [lockedTravelId, setLockedTravelId] = useState<string | null>(null)
   const [selectedMarker, setSelectedMarker] = useState<{
@@ -365,6 +372,18 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
     setSelectedMarker({ type: 'travel', data: travel, position })
   }, [])
 
+  // Clique no mapa vazio desfaz o foco da viagem e fecha a janela de detalhes.
+  // Cliques em marcadores e rotas não chegam aqui (o Google Maps os consome).
+  const clearFocus = useCallback(() => {
+    setSelectedMarker(null)
+    setLockedTravelId(null)
+    setFocusedTravelId(null)
+  }, [])
+
+  useEffect(() => {
+    if (focusResetSignal > 0) clearFocus()
+  }, [focusResetSignal, clearFocus])
+
   const apiKey = import.meta.env.VITE_MAPS_API_KEY ?? ''
 
   if (!apiKey || apiKey === 'your_google_maps_api_key_here') {
@@ -401,6 +420,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
             strictBounds: true,
           }}
           mapId="moto-dashboard-map"
+          onClick={clearFocus}
           gestureHandling="greedy"
           scrollwheel
           disableDefaultUI
@@ -476,7 +496,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
                   })}
                 >
                   <div
-                    className={`flex items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-md transition-opacity ${travel.status === 'InProgress' ? 'h-9 w-9 bg-[#166534]' : 'h-7 w-7 bg-cobalto'}`}
+                    className={`flex items-center justify-center rounded-full border-2 border-white bg-cobalto text-xs font-bold text-white shadow-md transition-opacity ${travel.status === 'InProgress' ? 'h-9 w-9' : 'h-7 w-7'}`}
                     style={{ opacity: isDimmed ? .2 : 1 }}
                     title={travel.status === 'Accepted' ? 'Local de embarque' : 'Destino'}
                   >
@@ -486,7 +506,7 @@ export default function DashboardMap({ users, travels, activeFilter }: Dashboard
                 {travel.encodedPolyline && (
                   <CobaltGoogleRoute
                     encodedPolyline={travel.encodedPolyline}
-                    color={travel.status === 'InProgress' ? '#166534' : '#1F4FE0'}
+                    color="#1F4FE0"
                     highlighted={isFocused}
                     dimmed={isDimmed}
                     onFocus={focus}
