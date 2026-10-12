@@ -19,14 +19,16 @@ import {
   validatePassword,
   validateConfirmEmail,
   validateConfirmPassword,
+  validatePhone,
 } from '../utils/validators'
-import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
+import { maskCpf, maskRg, maskPhone, maskUf, unmaskCpf, unmaskRg, unmaskPhone, validateUf } from '../utils/masks'
 
 interface FormValues {
   fullName: string
   cpf: string
   rg: string
   registration: string
+  phone: string
   birthdate: string
   address: string
   city: string
@@ -46,6 +48,7 @@ function toFormValues(p: PassengerProfile): FormValues {
     cpf: maskCpf(p.cpf),
     rg: maskRg(p.rg),
     registration: p.registration,
+    phone: maskPhone(p.phone ?? ''),
     birthdate: p.birthdate.slice(0, 10),
     address: p.address?.lineOne ?? '',
     city: p.address?.city ?? p.city ?? '',
@@ -64,6 +67,7 @@ function validateForm(form: FormValues): FieldErrors {
   e.cpf = validateCpf(form.cpf)
   e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
   e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
+  e.phone = validatePhone(form.phone)
   e.birthdate = validateBirthdate(form.birthdate)
   e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
   e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
@@ -165,6 +169,7 @@ export default function PassengerEditPage() {
     form.cpf !== initialForm.cpf ||
     form.rg !== initialForm.rg ||
     form.registration !== initialForm.registration ||
+    form.phone !== initialForm.phone ||
     form.birthdate !== initialForm.birthdate ||
     form.address !== initialForm.address ||
     form.city !== initialForm.city ||
@@ -189,6 +194,7 @@ export default function PassengerEditPage() {
     cpf: 'CPF',
     rg: 'RG',
     registration: 'Matrícula',
+    phone: 'Telefone',
     birthdate: 'Data de nascimento',
     address: 'Endereço',
     city: 'Cidade',
@@ -223,6 +229,7 @@ export default function PassengerEditPage() {
       cpf: unmaskCpf(form.cpf),
       rg: unmaskRg(form.rg),
       registration: form.registration,
+      phone: unmaskPhone(form.phone),
       birthdate: form.birthdate,
       address: {
         lineOne: form.address,
@@ -300,6 +307,7 @@ export default function PassengerEditPage() {
             <FormField id="cpf" label="CPF" required value={form.cpf} onChange={set('cpf')} error={errors.cpf} placeholder="000.000.000-00" maxLength={14} mask={maskCpf} />
             <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
             <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration} placeholder="Matrícula" softMaxLength={30} />
+            <FormField id="phone" label="Telefone" required value={form.phone} onChange={set('phone')} error={errors.phone} placeholder="(12) 91234-5678" maxLength={15} mask={maskPhone} />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} />
             <div className="col-span-2">
               <div className="relative">
