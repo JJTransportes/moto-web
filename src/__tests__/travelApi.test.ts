@@ -63,8 +63,9 @@ describe('travelApi', () => {
       expect(url).toContain('pageSize=10')
       expect(url).toContain('status=Completed')
       expect(url).toContain('status=Cancelled')
-      expect(url).toContain('createdFrom=2026-01-01')
-      expect(url).toContain('createdTo=2026-06-01')
+      const search = new URL(url, 'http://x').searchParams
+      expect(search.get('createdFrom')).toBe(new Date('2026-01-01T00:00:00.000').toISOString())
+      expect(search.get('createdTo')).toBe(new Date('2026-06-01T23:59:59.999').toISOString())
     })
   })
 
@@ -162,5 +163,19 @@ describe('travelApi', () => {
         expect(result.message).toBe('Não é possível cancelar uma viagem neste status.')
       }
     })
+  })
+})
+
+describe('dayBoundary', () => {
+  it('"até" no mesmo dia cobre o dia inteiro (De 15/10 até 15/10)', async () => {
+    const { dayBoundary } = await import('../api/travelApi')
+    const start = new Date(dayBoundary('2026-10-15', 'start')).getTime()
+    const end = new Date(dayBoundary('2026-10-15', 'end')).getTime()
+    expect(end - start).toBe(24 * 60 * 60 * 1000 - 1)
+  })
+
+  it('não altera valores que já não são só data', async () => {
+    const { dayBoundary } = await import('../api/travelApi')
+    expect(dayBoundary('2026-10-15T10:00:00Z', 'end')).toBe('2026-10-15T10:00:00Z')
   })
 })
