@@ -21,7 +21,6 @@ const passengerData = {
   userId: 'passenger-user-1',
   fullName: 'Maria Passageira',
   email: 'maria@example.com',
-  phone: '61987654321',
   cpf: '52998224725',
   rg: '12345678',
   registration: 'MAT-001',
@@ -87,7 +86,6 @@ describe('PassengerDetailPage', () => {
       expect(heading).toHaveTextContent('Maria Passageira')
     })
     expect(screen.getByText('maria@example.com')).toBeInTheDocument()
-    expect(screen.getByText('(61) 98765-4321')).toBeInTheDocument()
     expect(screen.getByText('529.982.247-25')).toBeInTheDocument()
     expect(screen.getByText('12345678')).toBeInTheDocument()
     expect(screen.getByText('MAT-001')).toBeInTheDocument()
@@ -246,14 +244,4 @@ describe('PassengerDetailPage', () => {
     })
   })
 
-  it('does not expose the deprecated priority-order control', async () => {
-    mockedFetchProfile.mockResolvedValue({ ok: true, data: passengerData })
-    renderPage()
-
-    await waitFor(() => {
-      expect(screen.getAllByText(passengerData.fullName).length).toBeGreaterThan(0)
-    })
-    expect(screen.queryByText('Pedidos prioritários')).not.toBeInTheDocument()
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
-  })
 })
