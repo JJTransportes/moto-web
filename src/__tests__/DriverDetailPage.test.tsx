@@ -20,7 +20,7 @@ const driverData = {
   id: 'driver-1',
   name: 'João Motorista',
   email: 'joao@example.com',
-  phone: null,
+  phone: '11998765432',
   cpf: '52998224725',
   cnh: '12345678900',
   vehicle: {
@@ -72,6 +72,7 @@ describe('DriverDetailPage', () => {
       expect(heading).toHaveTextContent('João Motorista')
     })
     expect(screen.getByText('joao@example.com')).toBeInTheDocument()
+    expect(screen.getByText('(11) 99876-5432')).toBeInTheDocument()
   })
 
   it('shows current vehicle details', async () => {

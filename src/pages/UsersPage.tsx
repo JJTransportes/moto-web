@@ -316,9 +316,16 @@ export default function UsersPage() {
                           fullName={item.fullName}
                           size="sm"
                         />
-                        <span className="text-sm font-medium text-gray-900">
-                          {item.fullName}
-                        </span>
+                        <div className="flex min-w-0 flex-col items-start gap-1">
+                          <span className="text-sm font-medium text-gray-900">
+                            {item.fullName}
+                          </span>
+                          {!item.phone?.trim() && (
+                            <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                              Telefone pendente
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     {role === 'drivers' ? (

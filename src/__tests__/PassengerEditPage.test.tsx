@@ -28,6 +28,7 @@ const COMPLETE_PASSENGER: PassengerProfile = {
   userId: 'user-1',
   fullName: 'Maria Passageira',
   email: 'maria@example.com',
+  phone: '11988887777',
   cpf: '12345678909',
   rg: 'MG1234567',
   registration: 'REG-001',

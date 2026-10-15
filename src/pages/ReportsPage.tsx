@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
+import { RefreshCw } from 'lucide-react'
 import DateIntervalSelector from '../components/reports/DateIntervalSelector'
 import PartitionTravelReportTable from '../components/reports/PartitionTravelReportTable'
 import ExportCsvButton from '../components/reports/ExportCsvButton'
@@ -25,6 +26,37 @@ export default function ReportsPage() {
   const { data, loading, error, refetch } = usePartitionTravelReport(appliedStart, appliedEnd)
 
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [unitSearch, setUnitSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [onlyWithTravels, setOnlyWithTravels] = useState(false)
+
+  const clearFilters = useCallback(() => {
+    const defaultStart = getDefaultStartDate()
+    const defaultEnd = getDefaultEndDate()
+    setStartDate(defaultStart)
+    setEndDate(defaultEnd)
+    setAppliedStart(defaultStart)
+    setAppliedEnd(defaultEnd)
+    setUnitSearch('')
+    setCategoryFilter('all')
+    setOnlyWithTravels(false)
+    setValidationError(null)
+  }, [])
+
+  const categories = useMemo(
+    () => Array.from(new Set((data ?? []).map(item => item.categoryTitle).filter(Boolean) as string[])).sort(),
+    [data],
+  )
+
+  const filteredData = useMemo(() => {
+    const query = unitSearch.trim().toLocaleLowerCase('pt-BR')
+    return (data ?? []).filter(item => {
+      if (query && !item.publicPartitionName.toLocaleLowerCase('pt-BR').includes(query)) return false
+      if (categoryFilter !== 'all' && item.categoryTitle !== categoryFilter) return false
+      if (onlyWithTravels && item.totalTravels === 0) return false
+      return true
+    })
+  }, [data, unitSearch, categoryFilter, onlyWithTravels])
 
   const handleApply = useCallback(() => {
     if (!startDate || !endDate) {
@@ -63,9 +95,64 @@ export default function ReportsPage() {
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-800">Corridas por Unidade</h2>
-          <ExportCsvButton startDate={appliedStart} endDate={appliedEnd} />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={refetch}
+              disabled={loading}
+              aria-label="Atualizar tabela de relatórios"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
+            <ExportCsvButton startDate={appliedStart} endDate={appliedEnd} />
+          </div>
         </div>
-        <PartitionTravelReportTable data={data} loading={loading} />
+        <div className="mb-4 grid gap-3 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto_auto] md:items-end">
+          <label className="space-y-1 text-sm font-medium text-gray-700">
+            <span>Filtrar por unidade</span>
+            <input
+              value={unitSearch}
+              onChange={event => setUnitSearch(event.target.value)}
+              placeholder="Digite o nome da unidade"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+          <label className="space-y-1 text-sm font-medium text-gray-700">
+            <span>Categoria</span>
+            <select
+              value={categoryFilter}
+              onChange={event => setCategoryFilter(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="all">Todas</option>
+              {categories.map(category => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 pb-2 text-sm font-medium text-gray-700">
+            <input
+              type="checkbox"
+              checked={onlyWithTravels}
+              onChange={event => setOnlyWithTravels(event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            Somente com corridas
+          </label>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Limpar filtros
+          </button>
+        </div>
+        {!loading && data && (
+          <p className="mb-3 text-sm text-gray-500">
+            {filteredData.length} de {data.length} registros exibidos
+          </p>
+        )}
+        <PartitionTravelReportTable data={filteredData} loading={loading} />
       </section>
     </div>
   )
