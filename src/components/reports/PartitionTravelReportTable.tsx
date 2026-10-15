@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import type { PartitionTravelReportItem } from '../../types/reports'
 
 interface SortConfig {
@@ -55,6 +55,8 @@ const COLUMNS: { key: ColumnKey; label: string; align: 'left' | 'right' }[] = [
 
 export default function PartitionTravelReportTable({ data, loading }: Props) {
   const [sort, setSort] = useState<SortConfig>({ key: 'totalTravels', direction: 'desc' })
+  const [page, setPage] = useState(1)
+  const pageSize = 10
 
   const sorted = useMemo(() => {
     if (!data) return null
@@ -76,6 +78,11 @@ export default function PartitionTravelReportTable({ data, loading }: Props) {
     })
     return sorted
   }, [data, sort])
+
+  useEffect(() => setPage(1), [data, sort])
+
+  const totalPages = Math.max(1, Math.ceil((sorted?.length ?? 0) / pageSize))
+  const paged = sorted?.slice((page - 1) * pageSize, page * pageSize) ?? []
 
   const handleSort = (key: ColumnKey) => {
     setSort(prev => ({
@@ -112,8 +119,9 @@ export default function PartitionTravelReportTable({ data, loading }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             {COLUMNS.map(col => (
@@ -129,7 +137,7 @@ export default function PartitionTravelReportTable({ data, loading }: Props) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {sorted!.map(item => (
+          {paged.map(item => (
             <tr key={item.publicPartitionId} className="even:bg-gray-50/50 hover:bg-gray-50">
               {COLUMNS.map(col => (
                 <td
@@ -142,7 +150,17 @@ export default function PartitionTravelReportTable({ data, loading }: Props) {
             </tr>
           ))}
         </tbody>
-      </table>
+       </table>
+      </div>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">Página {page} de {totalPages} ({sorted!.length} registros)</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setPage(value => Math.max(1, value - 1))} disabled={page === 1} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Anterior</button>
+            <button type="button" onClick={() => setPage(value => Math.min(totalPages, value + 1))} disabled={page === totalPages} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Próximo</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

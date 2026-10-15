@@ -64,6 +64,7 @@ async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('CPF'), '52998224725')
   await user.type(screen.getByLabelText('RG'), 'SP1234567')
   await user.type(screen.getByLabelText('Matrícula'), 'REG-001')
+  await user.type(screen.getByLabelText('Telefone'), '11988887777')
   const birthdate = screen.getByLabelText('Data de nascimento')
   await user.clear(birthdate)
   await user.type(birthdate, '1990-05-20')

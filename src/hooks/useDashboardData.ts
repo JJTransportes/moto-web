@@ -41,33 +41,46 @@ export function useDashboardData(): UseDashboardDataResult {
     // requisição em voo (o flag antigo deixava o fetch rodando até o fim à
     // toa quando token/retryCount mudavam rápido, ex. clique duplo em retry).
     const controller = new AbortController()
-    setLoading(true)
-    setError(null)
+    const load = (showLoading: boolean) => {
+      if (showLoading) {
+        setLoading(true)
+        setError(null)
+      }
 
-    Promise.all([
-      fetchStats(token, controller.signal),
-      fetchPartitionsTravels(token, controller.signal),
-      fetchPendingRegistrations(token, 1, 10, controller.signal),
-    ])
-      .then(([stats, partitions, regsResult]) => {
-        setData({
-          stats,
-          partitions,
-          pendingRegistrations: regsResult.items,
+      Promise.all([
+        fetchStats(token, controller.signal),
+        fetchPartitionsTravels(token, controller.signal),
+        fetchPendingRegistrations(token, 1, 10, controller.signal),
+      ])
+        .then(([stats, partitions, regsResult]) => {
+          setData({
+            stats,
+            partitions,
+            pendingRegistrations: regsResult.items,
+          })
+          setError(null)
+          setLoading(false)
         })
-        setLoading(false)
-      })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Erro ao carregar dados do dashboard.'
-        setError(message)
-        setLoading(false)
-      })
+        .catch((err: unknown) => {
+          if (err instanceof DOMException && err.name === 'AbortError') return
+          // Atualizações automáticas são silenciosas: mantêm o último dado
+          // válido visível. A carga inicial/manual continua exibindo o erro.
+          if (showLoading) {
+            const message =
+              err instanceof Error
+                ? err.message
+                : 'Erro ao carregar dados do dashboard.'
+            setError(message)
+            setLoading(false)
+          }
+        })
+    }
+
+    load(true)
+    const refreshTimer = window.setInterval(() => load(false), 10_000)
 
     return () => {
+      window.clearInterval(refreshTimer)
       controller.abort()
     }
   }, [token, retryCount])

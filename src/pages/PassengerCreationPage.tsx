@@ -15,10 +15,11 @@ import {
   validateConfirmPassword,
   validateMaxLength,
   validatePassword,
+  validatePhone,
   validateRequired,
   validateSafeText,
 } from '../utils/validators'
-import { maskCpf, maskRg, maskUf, unmaskCpf, unmaskRg, validateUf } from '../utils/masks'
+import { maskCpf, maskPhone, maskRg, maskUf, unmaskCpf, unmaskPhone, unmaskRg, validateUf } from '../utils/masks'
 import { useServerErrorGuard } from '../hooks/useServerErrorGuard'
 
 interface FormValues {
@@ -26,6 +27,7 @@ interface FormValues {
   cpf: string
   rg: string
   registration: string
+  phone: string
   birthdate: string
   address: string
   city: string
@@ -43,6 +45,7 @@ const emptyForm: FormValues = {
   cpf: '',
   rg: '',
   registration: '',
+  phone: '',
   birthdate: '',
   address: '',
   city: '',
@@ -108,6 +111,7 @@ export default function PassengerCreationPage() {
     e.cpf = validateCpf(form.cpf)
     e.rg = validateRg(form.rg) ?? validateMaxLength(form.rg, 20, 'RG')
     e.registration = validateRequired(form.registration, 'Matrícula') ?? validateMaxLength(form.registration, 30, 'Matrícula')
+    e.phone = validatePhone(form.phone)
     e.birthdate = validateBirthdate(form.birthdate)
     e.address = validateRequired(form.address, 'Endereço') ?? validateMaxLength(form.address, 120, 'Endereço') ?? validateSafeText(form.address, 'Endereço')
     e.city = validateRequired(form.city, 'Cidade') ?? validateMaxLength(form.city, 60, 'Cidade') ?? validateSafeText(form.city, 'Cidade')
@@ -144,6 +148,7 @@ export default function PassengerCreationPage() {
       cpf: unmaskCpf(form.cpf),
       rg: unmaskRg(form.rg),
       registration: form.registration,
+      phone: unmaskPhone(form.phone),
       birthdate: form.birthdate,
       address: {
         lineOne: form.address,
@@ -213,6 +218,7 @@ export default function PassengerCreationPage() {
             <FormField id="cpf" label="CPF" required value={form.cpf} onChange={set('cpf')} error={errors.cpf ?? serverGuard.errorFor('cpf')} placeholder="000.000.000-00" maxLength={14} mask={maskCpf} />
             <FormField id="rg" label="RG" required value={form.rg} onChange={set('rg')} error={errors.rg ?? serverGuard.errorFor('rg')} placeholder="Ex: 123456789 ou MG1234567" maxLength={12} mask={maskRg} />
             <FormField id="registration" label="Matrícula" required value={form.registration} onChange={set('registration')} error={errors.registration ?? serverGuard.errorFor('registration')} placeholder="Matrícula" softMaxLength={30} />
+            <FormField id="phone" label="Telefone" required value={form.phone} onChange={set('phone')} error={errors.phone} placeholder="(12) 91234-5678" maxLength={15} mask={maskPhone} />
             <FormField id="birthdate" label="Data de nascimento" required type="date" value={form.birthdate} onChange={set('birthdate')} error={errors.birthdate} placeholder="" />
           </div>
         </div>

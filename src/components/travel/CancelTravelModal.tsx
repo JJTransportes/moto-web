@@ -63,11 +63,13 @@ export default function CancelTravelModal({
           id="cancel-reason"
           value={reason}
           onChange={e => setReason(e.target.value)}
+          maxLength={300}
           disabled={loading}
           rows={3}
           placeholder="Descreva o motivo do cancelamento..."
           className="mb-4 w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 resize-none"
         />
+        <p className="-mt-3 mb-4 text-right text-xs text-gray-400">{reason.length}/300</p>
 
         {error && (
           <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600" role="alert">
@@ -88,7 +90,7 @@ export default function CancelTravelModal({
             type="button"
             onClick={() => onConfirm(trimmed)}
             disabled={loading || !trimmed}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300"
           >
             {loading ? 'Cancelando...' : 'Confirmar Cancelamento'}
           </button>

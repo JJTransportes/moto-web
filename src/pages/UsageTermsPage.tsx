@@ -79,6 +79,8 @@ export default function UsageTermsPage() {
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState<string>()
   const [usageTerms, setUsageTerms] = useState<UsageTerm[]>([])
+  const [page, setPage] = useState(1)
+  const pageSize = 10
 
   // Form state
   const [form, setForm] = useState<UsageTermForm>(emptyForm)
@@ -102,6 +104,7 @@ export default function UsageTermsPage() {
       return
     }
     setUsageTerms(result.data)
+    setPage(1)
     setPageStatus(result.data.length === 0 ? 'empty' : 'loaded')
   }, [token])
 
@@ -257,6 +260,9 @@ export default function UsageTermsPage() {
 
   // --- Render: List View ---
   if (viewMode === 'list') {
+    const totalPages = Math.max(1, Math.ceil(usageTerms.length / pageSize))
+    const currentPage = Math.min(page, totalPages)
+    const pagedTerms = usageTerms.slice((currentPage - 1) * pageSize, currentPage * pageSize)
     return (
       <div className="space-y-6">
         {/* Header */}
@@ -332,7 +338,7 @@ export default function UsageTermsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {usageTerms.map((term) => (
+                {pagedTerms.map((term) => (
                   <tr key={term.usageTermId} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">
                       {term.title}
@@ -381,6 +387,15 @@ export default function UsageTermsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {pageStatus === 'loaded' && totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">Página {currentPage} de {totalPages} ({usageTerms.length} termos)</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setPage(value => Math.max(1, value - 1))} disabled={currentPage === 1} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Anterior</button>
+              <button type="button" onClick={() => setPage(value => Math.min(totalPages, value + 1))} disabled={currentPage === totalPages} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-50">Próximo</button>
+            </div>
           </div>
         )}
       </div>
