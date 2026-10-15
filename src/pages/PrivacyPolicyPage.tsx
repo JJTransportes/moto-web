@@ -53,6 +53,10 @@ export default function PrivacyPolicyPage() {
                 imagem de perfil, quando fornecida voluntariamente pelo usuário;
               </li>
               <li>
+                localização precisa e aproximada do dispositivo, conforme
+                descrito na seção &quot;Dados de localização&quot;;
+              </li>
+              <li>
                 informações técnicas necessárias ao funcionamento, segurança e
                 manutenção do aplicativo.
               </li>
@@ -116,6 +120,7 @@ export default function PrivacyPolicyPage() {
               <li>criação e gerenciamento da conta do usuário;</li>
               <li>identificação e autenticação do usuário;</li>
               <li>disponibilização das funcionalidades do aplicativo;</li>
+              <li>despacho de corridas, acompanhamento do trajeto e segurança das corridas;</li>
               <li>comunicação com o usuário;</li>
               <li>envio de informações relacionadas à conta e aos serviços utilizados;</li>
               <li>recuperação e segurança da conta;</li>
@@ -158,6 +163,46 @@ export default function PrivacyPolicyPage() {
               revogá-lo nos termos da legislação aplicável, observando-se que a
               revogação poderá afetar determinadas funcionalidades que dependam
               daquele tratamento.
+            </p>
+          </section>
+
+          {/* Dados de localização */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Dados de localização
+            </h2>
+            <p className="text-sm leading-relaxed text-gray-600">
+              Os aplicativos Motô Motorista e Motô Passageiro coletam a
+              localização precisa e aproximada do dispositivo para permitir o
+              funcionamento do serviço de corridas.
+            </p>
+            <ul className="list-disc space-y-2 pl-6 text-sm leading-relaxed text-gray-600">
+              <li>
+                <strong>Motoristas:</strong> a localização é coletada enquanto o
+                motorista estiver disponível para atendimentos ou em corrida,
+                inclusive quando o aplicativo estiver fechado ou não estiver em
+                uso (segundo plano). Ela é utilizada para oferecer corridas
+                próximas, acompanhar o atendimento e permitir o monitoramento da
+                frota no painel administrativo.
+              </li>
+              <li>
+                <strong>Passageiros:</strong> a localização é utilizada para
+                buscar motoristas próximos, definir o ponto de partida e
+                acompanhar a corrida, inclusive quando o aplicativo estiver em
+                segundo plano durante o uso do serviço.
+              </li>
+            </ul>
+            <p className="text-sm leading-relaxed text-gray-600">
+              A posição em tempo real é mantida apenas em sua versão mais
+              recente e é removida automaticamente do sistema após alguns
+              minutos. Os pontos de origem, destino e conclusão das corridas
+              permanecem no histórico da corrida. A localização não é vendida
+              nem utilizada para publicidade.
+            </p>
+            <p className="text-sm leading-relaxed text-gray-600">
+              O usuário pode revogar a permissão de localização a qualquer
+              momento nas configurações do aparelho. Sem essa permissão, não é
+              possível receber ou solicitar corridas.
             </p>
           </section>
 
