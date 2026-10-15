@@ -18,6 +18,7 @@ export interface DriverListItem {
   categoryTitle: string | null
   travelCount: number
   photoUrl?: string | null
+  phone?: string | null
 }
 
 export interface PassengerListItem {
@@ -38,6 +39,7 @@ export interface PassengerListItem {
   isActive: boolean
   solicitationCount: number
   photoUrl?: string | null
+  phone?: string | null
 }
 
 export interface PaginatedDriverListResponse {

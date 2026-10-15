@@ -43,6 +43,10 @@ export interface TravelDetailResponse {
   finishedAt: string | null
   cancelledAt: string | null
   cancellationReason: string | null
+  cancelledByUserId?: string | null
+  cancelledByName?: string | null
+  cancelledByRole?: 'Administrator' | 'Driver' | 'Passenger' | null
+  cancellationFromStatus?: TravelStatus | null
   driverName: string | null
   passengerName: string | null
   routes: TravelRouteResponse[]
