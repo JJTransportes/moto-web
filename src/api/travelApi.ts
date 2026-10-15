@@ -5,6 +5,19 @@ import type {
   TravelListParams,
 } from '../types/travel'
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * O input de data entrega `AAAA-MM-DD`. Enviado assim, o backend lê meia-noite
+ * UTC e o filtro "até" deixava de fora o dia inteiro (De 15/10 até 15/10 vinha
+ * vazio). Convertemos para o início/fim do dia no fuso do navegador.
+ */
+export const dayBoundary = (value: string, edge: 'start' | 'end'): string => {
+  if (!DATE_ONLY.test(value)) return value
+  const time = edge === 'start' ? 'T00:00:00.000' : 'T23:59:59.999'
+  return new Date(`${value}${time}`).toISOString()
+}
+
 const buildQuery = (params: TravelListParams): string => {
   const sp = new URLSearchParams()
   if (params.page) sp.set('page', String(params.page))
@@ -12,8 +25,8 @@ const buildQuery = (params: TravelListParams): string => {
   if (params.status?.length) {
     params.status.forEach(s => sp.append('status', s))
   }
-  if (params.createdFrom) sp.set('createdFrom', params.createdFrom)
-  if (params.createdTo) sp.set('createdTo', params.createdTo)
+  if (params.createdFrom) sp.set('createdFrom', dayBoundary(params.createdFrom, 'start'))
+  if (params.createdTo) sp.set('createdTo', dayBoundary(params.createdTo, 'end'))
   const qs = sp.toString()
   return qs ? `?${qs}` : ''
 }
